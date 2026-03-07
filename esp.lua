@@ -3,135 +3,84 @@ local LocalPlayer = Players.LocalPlayer
 local ESP_Enabled = false
 local Helper_Enabled = false
 
--- 1. SETUP UI (Panel Menu)
+local Kamus = {
+    ["a"] = {"Apel", "Ayam", "Angin", "Awan", "Abadi"},
+    ["b"] = {"Buku", "Bola", "Bambu", "Bebek", "Bintang"},
+    ["c"] = {"Cacing", "Cermin", "Cuka", "Catur", "Candi"},
+    ["d"] = {"Dadu", "Dapur", "Dunia", "Domba", "Daging"},
+    ["e"] = {"Emas", "Elang", "Ekor", "Empat", "Ember"},
+    ["f"] = {"Fokus", "Fajar", "Fisik", "Foto", "Fakta"},
+    ["g"] = {"Gajah", "Gelas", "Gitar", "Garam", "Gurun"},
+    ["h"] = {"Hujan", "Hutan", "Hakim", "Hantu", "Handuk"},
+    ["i"] = {"Ikan", "Intan", "Izin", "Ibu", "Istana"},
+    ["j"] = {"Jeruk", "Jalan", "Jaring", "Jerapah", "Jambu"},
+    ["k"] = {"Kuda", "Kapas", "Kasur", "Kancil", "Kamera"},
+    ["l"] = {"Lampu", "Lari", "Lidah", "Langit", "Lemon"},
+    ["m"] = {"Makan", "Mobil", "Madu", "Mawar", "Musang"},
+    ["n"] = {"Nasi", "Naga", "Nomor", "Nanas", "Nyamuk"},
+    ["o"] = {"Obat", "Orang", "Otot", "Obeng", "Ondel"},
+    ["p"] = {"Pintu", "Pasir", "Paku", "Pohon", "Panda"},
+    ["r"] = {"Roda", "Raja", "Rumah", "Rantai", "Rusa"},
+    ["s"] = {"Sapi", "Sapu", "Susu", "Semut", "Sendok"},
+    ["t"] = {"Tali", "Tebu", "Tikus", "Tangga", "Topi"},
+    ["u"] = {"Ular", "Uang", "Unta", "Udang", "Ungu"},
+    ["w"] = {"Wajah", "Warteg", "Warna", "Wajan", "Wortel"},
+    ["y"] = {"Yatim", "Yakin", "Yoyo", "Yuyu", "Yodium"},
+    ["ya"] = {"Yakin", "Yatim", "Yasin", "Yodium", "Yudisial", "Yuyu"}
+}
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GameHelperMenu"
-ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "FANN_UI"; ScreenGui.Parent = game:GetService("CoreGui"); ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 220, 0, 130)
-MainFrame.Position = UDim2.new(0, 15, 0.4, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-MainFrame.Active = true
-MainFrame.Draggable = true -- Bisa kamu geser di layar
-MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 240, 0, 260); MainFrame.Position = UDim2.new(0, 20, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); MainFrame.BorderSizePixel = 4
+MainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255); MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
-
--- Judul Menu
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "MENU HELPER"
-Title.Font = Enum.Font.SourceSansBold
-Title.TextColor3 = Color3.fromRGB(255, 255, 0)
-Title.TextSize = 20
-Title.BackgroundTransparency = 1
-Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "FANN"; Title.Font = Enum.Font.SourceSansBold
+Title.TextColor3 = Color3.new(1, 1, 0); Title.TextSize = 30; Title.BackgroundTransparency = 1; Title.Parent = MainFrame
 
--- --- FITUR 1: ESP ---
-local EspLabel = Instance.new("TextLabel")
-EspLabel.Size = UDim2.new(0, 100, 0, 30)
-EspLabel.Position = UDim2.new(0.05, 0, 0.3, 0)
-EspLabel.Text = "ESP"
-EspLabel.Font = Enum.Font.SourceSansBold
-EspLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-EspLabel.TextXAlignment = Enum.TextXAlignment.Left
-EspLabel.BackgroundTransparency = 1
-EspLabel.Parent = MainFrame
-
-local EspBtn = Instance.new("TextButton")
-EspBtn.Size = UDim2.new(0, 80, 0, 25)
-EspBtn.Position = UDim2.new(0.55, 0, 0.32, 0)
-EspBtn.Text = "OFF"
-EspBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-EspBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-EspBtn.Font = Enum.Font.SourceSansBold
-EspBtn.Parent = MainFrame
-
--- --- FITUR 2: GAME LANJUT KATA ---
-local GameLabel = Instance.new("TextLabel")
-GameLabel.Size = UDim2.new(0, 120, 0, 30)
-GameLabel.Position = UDim2.new(0.05, 0, 0.6, 0)
-GameLabel.Text = "Game Lanjut Kata"
-GameLabel.Font = Enum.Font.SourceSansBold
-GameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-GameLabel.TextXAlignment = Enum.TextXAlignment.Left
-GameLabel.BackgroundTransparency = 1
-GameLabel.Parent = MainFrame
-
-local GameBtn = Instance.new("TextButton")
-GameBtn.Size = UDim2.new(0, 80, 0, 25)
-GameBtn.Position = UDim2.new(0.55, 0, 0.62, 0)
-GameBtn.Text = "OFF"
-GameBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-GameBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-GameBtn.Font = Enum.Font.SourceSansBold
-GameBtn.Parent = MainFrame
-
--- 2. LOGIKA FITUR
-local function applyESP(char, p)
-    local h = char:FindFirstChild("ESPHighlight") or Instance.new("Highlight")
-    h.Name = "ESPHighlight"
-    h.Parent = char
-    h.Enabled = ESP_Enabled
-    
-    local head = char:WaitForChild("Head", 5)
-    if head then
-        local bill = char:FindFirstChild("ESPName") or Instance.new("BillboardGui")
-        bill.Name = "ESPName"
-        bill.Adornee = head
-        bill.Size = UDim2.new(0, 100, 0, 30)
-        bill.AlwaysOnTop = true
-        bill.Enabled = ESP_Enabled
-        bill.Parent = char
-        local lab = bill:FindFirstChild("TextLabel") or Instance.new("TextLabel")
-        lab.BackgroundTransparency = 1; lab.Size = UDim2.new(1,0,1,0)
-        lab.Text = p.Name; lab.TextColor3 = Color3.new(1,1,1)
-        lab.TextStrokeTransparency = 0; lab.TextScaled = true; lab.Parent = bill
-    end
+local function addFeature(name, yPos, callback)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0, 130, 0, 30); lbl.Position = UDim2.new(0.05, 0, 0, yPos)
+    lbl.Text = name; lbl.Font = Enum.Font.SourceSansBold; lbl.TextColor3 = Color3.new(1, 1, 1)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.BackgroundTransparency = 1; lbl.Parent = MainFrame
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 65, 0, 25); btn.Position = UDim2.new(0.65, 0, 0, yPos + 2)
+    btn.Text = "OFF"; btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0); btn.Font = Enum.Font.SourceSansBold
+    btn.TextColor3 = Color3.new(1, 1, 1); btn.Parent = MainFrame
+    btn.MouseButton1Click:Connect(function() local state = callback(); btn.Text = state and "ON" or "OFF"; btn.BackgroundColor3 = state and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(180, 0, 0) end)
 end
 
--- Tombol ESP Click
-EspBtn.MouseButton1Click:Connect(function()
-    ESP_Enabled = not ESP_Enabled
-    EspBtn.Text = ESP_Enabled and "ON" or "OFF"
-    EspBtn.BackgroundColor3 = ESP_Enabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(200, 0, 0)
-    
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            if p.Character:FindFirstChild("ESPHighlight") then p.Character.ESPHighlight.Enabled = ESP_Enabled end
-            if p.Character:FindFirstChild("ESPName") then p.Character.ESPName.Enabled = ESP_Enabled end
+addFeature("ESP", 55, function() ESP_Enabled = not ESP_Enabled return ESP_Enabled end)
+addFeature("Game Lanjut Kata", 95, function() Helper_Enabled = not Helper_Enabled return Helper_Enabled end)
+
+local SugBox = Instance.new("Frame")
+SugBox.Size = UDim2.new(0.9, 0, 0, 100); SugBox.Position = UDim2.new(0.05, 0, 0, 140)
+SugBox.BackgroundColor3 = Color3.new(0, 0, 0); SugBox.BorderSizePixel = 1; SugBox.BorderColor3 = Color3.new(1, 1, 0); SugBox.Parent = MainFrame
+
+local SugTxt = Instance.new("TextLabel")
+SugTxt.Size = UDim2.new(1, 0, 1, 0); SugTxt.Text = "Menunggu lawan..."; SugTxt.TextColor3 = Color3.fromRGB(0, 255, 255)
+SugTxt.TextWrapped = true; SugTxt.TextScaled = true; SugTxt.BackgroundTransparency = 1; SugTxt.Parent = SugBox
+
+game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(data)
+    if Helper_Enabled and data.FromSpeaker ~= LocalPlayer.Name then
+        local msg = data.Message:lower()
+        if msg:sub(-2) == "ya" then
+            SugTxt.Text = "Lawan: "..msg.."\nSaran (YA):\n"..table.concat(Kamus["ya"], ", ")
+        else
+            local last = msg:match("%a$")
+            if last and Kamus[last] then SugTxt.Text = "Lawan: "..msg.."\nSaran ("..last:upper().."):\n"..table.concat(Kamus[last], ", ") end
         end
     end
 end)
 
--- Tombol Game Lanjut Kata Click
-GameBtn.MouseButton1Click:Connect(function()
-    Helper_Enabled = not Helper_Enabled
-    GameBtn.Text = Helper_Enabled and "ON" or "OFF"
-    GameBtn.BackgroundColor3 = Helper_Enabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(200, 0, 0)
-    
-    if Helper_Enabled then
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Game Lanjut Kata",
-            Text = "Fitur Aktif! Siap menebak kata.",
-            Duration = 3
-        })
+game:GetService("RunService").RenderStepped:Connect(function()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local h = p.Character:FindFirstChild("ESPHighlight") or Instance.new("Highlight", p.Character)
+            h.Name = "ESPHighlight"; h.Enabled = ESP_Enabled; h.FillColor = Color3.fromRGB(255, 0, 0)
+        end
     end
-end)
-
--- Inisialisasi Player
-for _, p in pairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then
-        if p.Character then applyESP(p.Character, p) end
-        p.CharacterAdded:Connect(function(c) applyESP(c, p) end)
-    end
-end
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function(c) task.wait(1); applyESP(c, p) end)
 end)
