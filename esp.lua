@@ -1,75 +1,126 @@
 local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Helper_Enabled = false
-local Is_Minimized = false
+local Is_Clicking = false
 
-local UniversalBrain = {
-    ["a"] = {"Antariksa", "Ambisi"}, ["b"] = {"Bakwan", "Bahari"},
-    ["c"] = {"Cahaya", "Cerdas"}, ["d"] = {"Dinamis", "Dahsyat"},
-    ["ng"] = {"Ngantuk", "Ngebut"}, ["ny"] = {"Nyanyi", "Nyaman"}
+-- DATABASE RARITY LENGKAP
+local RarityTargets = {
+    "SECRET", "MYTHIC", "LEGENDARY", "EXCLUSIVE", "OG", "RARE", "UNCOMMON", "COMMON"
 }
 
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 260, 0, 240) -- Ukuran lebih tinggi biar tombol gak ketutup
-Main.Position = UDim2.new(0.5, -130, 0.5, -120)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Main.BorderSizePixel = 0
-Main.Active = true; Main.Draggable = true
-
--- LENGKUNGAN (SMOOTH CORNER)
-local MainCorner = Instance.new("UICorner", Main)
-MainCorner.CornerRadius = UDim.new(0, 20) -- Bikin ujung melengkung mulus
-
--- FOTO BACKGROUND (Foto Cewek Berkerudung)
-local BgImage = Instance.new("ImageLabel", Main)
-BgImage.Size = UDim2.new(1, 0, 1, 0)
-BgImage.Image = "rbxassetid://134015690327429" -- PASTIKAN ID INI BENAR
-BgImage.BackgroundTransparency = 1
-BgImage.ImageTransparency = 0.5
-BgImage.ScaleType = Enum.ScaleType.Crop
-local ImgCorner = Instance.new("UICorner", BgImage)
-ImgCorner.CornerRadius = UDim.new(0, 20)
-
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 50); Title.Text = "FANN ULTIMATE"; Title.TextColor3 = Color3.new(1, 1, 0)
-Title.BackgroundTransparency = 1; Title.TextSize = 22; Title.Font = Enum.Font.SourceSansBold
-
--- TOMBOL ON/OFF (Ditaruh di atas kotak jawaban)
-local Btn = Instance.new("TextButton", Main)
-Btn.Size = UDim2.new(0.9, 0, 0, 45); Btn.Position = UDim2.new(0.05, 0, 0, 60)
-Btn.Text = "AI DETECT: OFF"; Btn.BackgroundColor3 = Color3.new(0.7, 0, 0)
-Btn.TextColor3 = Color3.new(1, 1, 1); Btn.Font = Enum.Font.SourceSansBold
-local BtnCorner = Instance.new("UICorner", Btn)
-BtnCorner.CornerRadius = UDim.new(0, 12)
-
--- KOTAK JAWABAN (Lengkung & Transparan)
-local ResBox = Instance.new("Frame", Main)
-ResBox.Size = UDim2.new(0.9, 0, 0, 100); ResBox.Position = UDim2.new(0.05, 0, 0, 115)
-ResBox.BackgroundColor3 = Color3.new(0, 0, 0); ResBox.BackgroundTransparency = 0.6
-local ResCorner = Instance.new("UICorner", ResBox)
-ResCorner.CornerRadius = UDim.new(0, 15)
-
-local ResTxt = Instance.new("TextLabel", ResBox)
-ResTxt.Size = UDim2.new(1, 0, 1, 0); ResTxt.Text = "Ready to Play!"; ResTxt.TextColor3 = Color3.new(0, 1, 1)
-ResTxt.BackgroundTransparency = 1; ResTxt.TextScaled = true; ResTxt.Font = Enum.Font.SourceSansBold
-
--- FUNGSI DETEKSI
-Btn.MouseButton1Click:Connect(function()
-    Helper_Enabled = not Helper_Enabled
-    Btn.Text = Helper_Enabled and "AI: ON (AUTO COPY)" or "AI DETECT: OFF"
-    Btn.BackgroundColor3 = Helper_Enabled and Color3.new(0, 0.6, 0) or Color3.new(0.7, 0, 0)
+-- 1. FITUR ANTI-AFK
+LocalPlayer.Idled:Connect(function()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+    wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
 end)
 
-game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(data)
-    if Helper_Enabled and data.FromSpeaker ~= LocalPlayer.Name then
-        local msg = data.Message:lower():gsub("%s+", "")
-        local last = msg:sub(-1)
-        local pil = UniversalBrain[last]
-        if pil then
-            local hasil = pil[math.random(1, #pil)]
-            ResTxt.Text = "JAWAB: "..hasil:upper()
-            if setclipboard then setclipboard(hasil) end
+-- UI SETUP (SUPER MULUS V15)
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 260, 0, 280) -- Tambah tinggi buat info baru
+Main.Position = UDim2.new(0.5, -130, 0.5, -140)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.BackgroundTransparency = 0.1; Main.BorderSizePixel = 0
+Main.Active = true; Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 25)
+
+local BgImage = Instance.new("ImageLabel", Main)
+BgImage.Size = UDim2.new(1, 0, 1, 0); BgImage.Image = "rbxassetid://134015690327429" 
+BgImage.BackgroundTransparency = 1; BgImage.ImageTransparency = 0.6; BgImage.ScaleType = Enum.ScaleType.Crop
+Instance.new("UICorner", BgImage).CornerRadius = UDim.new(0, 25)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 50); Title.Text = "FANN TYCOON GOD V15"; Title.TextColor3 = Color3.new(1, 1, 0)
+Title.BackgroundTransparency = 1; Title.Font = Enum.Font.SourceSansBold; Title.TextSize = 18
+
+-- TOMBOL POWER
+local Btn = Instance.new("TextButton", Main)
+Btn.Size = UDim2.new(0.9, 0, 0, 50); Btn.Position = UDim2.new(0.05, 0, 0, 60)
+Btn.Text = "GOD MODE: OFF"; Btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+Btn.TextColor3 = Color3.new(1, 1, 1); Btn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 15)
+
+-- STATUS KOTAK
+local ResBox = Instance.new("Frame", Main)
+ResBox.Size = UDim2.new(0.9, 0, 0, 140); ResBox.Position = UDim2.new(0.05, 0, 0, 120)
+ResBox.BackgroundColor3 = Color3.new(0, 0, 0); ResBox.BackgroundTransparency = 0.6
+Instance.new("UICorner", ResBox).CornerRadius = UDim.new(0, 15)
+
+local Status = Instance.new("TextLabel", ResBox)
+Status.Size = UDim2.new(1, 0, 1, 0); Status.Text = "Collecting & Hunting..."; Status.TextColor3 = Color3.new(1, 1, 1)
+Status.TextScaled = true; Status.Font = Enum.Font.SourceSansBold; Status.BackgroundTransparency = 1
+
+-- 2. FUNGSI AUTO COLLECT UANG (BASE)
+local function AutoCollectMoney()
+    -- Mencari objek bernama "Touch", "Collect", atau "Money" di sekitar base
+    for _, obj in pairs(game.Workspace:GetDescendants()) do
+        if obj.Name:lower():find("collect") or obj.Name:lower():find("money") then
+            if obj:IsA("TouchTransmitter") then
+                -- Teleport kecil atau sentuh partnya
+                firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj.Parent, 0)
+                wait(0.01)
+                firetouchinterest(LocalPlayer.Character.HumanoidRootPart, obj.Parent, 1)
+            end
         end
     end
+end
+
+-- FUNGSI HUNTER & CLICKER (Tetap Ada)
+local function StartSpamClick()
+    if Is_Clicking then return end
+    Is_Clicking = true
+    spawn(function()
+        while Is_Clicking and Helper_Enabled do
+            local vSize = game.Workspace.CurrentCamera.ViewportSize
+            VirtualInputManager:SendMouseButtonEvent(vSize.X/2, vSize.Y/2, 0, true, game, 1)
+            wait(0.01); VirtualInputManager:SendMouseButtonEvent(vSize.X/2, vSize.Y/2, 0, false, game, 1); wait(0.01)
+        end
+    end)
+end
+
+local function GodAction()
+    AutoCollectMoney() -- Jalankan koleksi uang base
+    
+    for _, obj in pairs(game:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextBox") then
+            local txt = obj.Text:upper()
+            for _, t in pairs(RarityTargets) do
+                if txt:find(t) then
+                    Status.Text = "MONEY & "..t.." DETECTED!"
+                    
+                    -- Auto Equip & Click (Logika Hunting)
+                    local bp = LocalPlayer.Backpack; local char = LocalPlayer.Character
+                    for _, item in pairs(bp:GetChildren()) do
+                        if item:IsA("Tool") and (item.Name:lower():find("rod") or item.Name:lower():find("pancing")) then
+                            char.Humanoid:EquipTool(item)
+                        end
+                    end
+                    
+                    local part = obj:FindFirstAncestorOfClass("Part") or obj:FindFirstAncestorOfClass("MeshPart")
+                    if part then
+                        local pos, vis = game.Workspace.CurrentCamera:WorldToScreenPoint(part.Position)
+                        if vis then
+                            VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+                            wait(0.05); VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+                            StartSpamClick()
+                        end
+                    end
+                    return
+                end
+            end
+        end
+    end
+    Is_Clicking = false; Status.Text = "Base Clean & Scanning..."; Status.TextColor3 = Color3.new(1, 1, 1)
+end
+
+Btn.MouseButton1Click:Connect(function()
+    Helper_Enabled = not Helper_Enabled
+    Btn.Text = Helper_Enabled and "TYCOON GOD: ACTIVE" or "GOD MODE: OFF"
+    Btn.BackgroundColor3 = Helper_Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+    if not Helper_Enabled then Is_Clicking = false end
+end)
+
+spawn(function()
+    while wait(0.5) do if Helper_Enabled then GodAction() end end
 end)
