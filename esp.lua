@@ -82,5 +82,91 @@ end
 
 CreateToggle("AUTO COLLECT UANG", UDim2.new(0.05, 0, 0, 60), function(v) _G.AutoCollect = v end)
 CreateToggle("ANTI AFK", UDim2.new(0.05, 0, 0, 110), function(v) _G.AntiAFK = v end)
-CreateToggle("AUTO TELE-H
-    
+CreateToggle("AUTO TELE-HUNT", UDim2.new(0.05, 0, 0, 160), function(v) _G.AutoHunt = v end)
+
+-- RARITY SELECTOR
+local RarityBtn = Instance.new("TextButton", Main)
+RarityBtn.Size = UDim2.new(0.9, 0, 0, 45); RarityBtn.Position = UDim2.new(0.05, 0, 0, 215)
+RarityBtn.Text = "TARGET: " .. Rarities[rIndex]:upper()
+RarityBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); RarityBtn.TextColor3 = Color3.new(0, 1, 1)
+Instance.new("UICorner", RarityBtn).CornerRadius = UDim.new(0, 15)
+
+RarityBtn.MouseButton1Click:Connect(function()
+    rIndex = rIndex + 1; if rIndex > #Rarities then rIndex = 1 end
+    _G.SelectedRarity = Rarities[rIndex]; RarityBtn.Text = "TARGET: " .. _G.SelectedRarity:upper()
+end)
+
+local Status = Instance.new("TextLabel", Main)
+Status.Size = UDim2.new(0.9, 0, 0, 50); Status.Position = UDim2.new(0.05, 0, 0, 275)
+Status.BackgroundColor3 = Color3.new(0,0,0); Status.BackgroundTransparency = 0.6
+Status.Text = "READY"; Status.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", Status).CornerRadius = UDim.new(0, 12)
+
+-- LOOP UTAMA (FAST & AUTO ROD)
+task.spawn(function()
+    while true do
+        task.wait(0.1) -- Cek super cepat tiap 0.1 detik
+        
+        if _G.AutoHunt then
+            local targetFound = false
+            for _, obj in pairs(game:GetDescendants()) do
+                if (obj:IsA("TextLabel") or obj:IsA("TextBox")) and obj.Text:lower():find(_G.SelectedRarity) then
+                    local part = obj:FindFirstAncestorOfClass("Part") or obj:FindFirstAncestorOfClass("MeshPart")
+                    if part then
+                        targetFound = true
+                        Status.Text = "BLING TO: " .. _G.SelectedRarity:upper()
+                        
+                        -- 1. AUTO EQUIP ROD (WAJIB PEGANG)
+                        local character = LocalPlayer.Character
+                        if character and character:FindFirstChild("Humanoid") then
+                            local toolInHand = character:FindFirstChildOfClass("Tool")
+                            -- Jika tidak megang apa-apa atau bukan rod, cari di backpack
+                            if not toolInHand or (not toolInHand.Name:lower():find("rod") and not toolInHand.Name:lower():find("pancing")) then
+                                for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                                    if tool.Name:lower():find("rod") or tool.Name:lower():find("pancing") then
+                                        character.Humanoid:EquipTool(tool)
+                                        task.wait(0.3) -- Tunggu sebentar biar beneran kepegang
+                                        break
+                                    end
+                                end
+                            end
+                        end
+
+                        -- 2. TELEPORT KE BENDA
+                        character.HumanoidRootPart.CFrame = part.CFrame * CFrame.new(0, 3, 0)
+                        
+                        -- 3. AUTO CAST (KLIK AMBIL)
+                        local pos, vis = game.Workspace.CurrentCamera:WorldToScreenPoint(part.Position)
+                        if vis then
+                            -- Klik berulang biar pasti kepancing
+                            for i = 1, 3 do
+                                VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, true, game, 1)
+                                task.wait(0.05)
+                                VirtualInputManager:SendMouseButtonEvent(pos.X, pos.Y, 0, false, game, 1)
+                                task.wait(0.1)
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+            if not targetFound then Status.Text = "MENCARI " .. _G.SelectedRarity:upper() end
+        end
+
+        -- AUTO COLLECT UANG BASE
+        if _G.AutoCollect then
+            for _, obj in pairs(game.Workspace:GetDescendants()) do
+                if (obj.Name:lower():find("collect") or obj.Name:lower():find("giver")) and obj:IsA("BasePart") then
+                    local dist = (LocalPlayer.Character.HumanoidRootPart.Position - obj.Position).Magnitude
+                    if dist < 40 then -- Jarak dekat base saja
+                        local currentPos = LocalPlayer.Character.HumanoidRootPart.CFrame
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
+                        task.wait(0.2)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = currentPos
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
