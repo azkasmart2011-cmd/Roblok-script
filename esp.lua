@@ -2,85 +2,110 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ESP_Enabled = false
 local Helper_Enabled = false
+local Is_Minimized = false
 
-local Kamus = {
-    ["a"] = {"Apel", "Ayam", "Angin", "Awan", "Abadi"},
-    ["b"] = {"Buku", "Bola", "Bambu", "Bebek", "Bintang"},
-    ["c"] = {"Cacing", "Cermin", "Cuka", "Catur", "Candi"},
-    ["d"] = {"Dadu", "Dapur", "Dunia", "Domba", "Daging"},
-    ["e"] = {"Emas", "Elang", "Ekor", "Empat", "Ember"},
-    ["f"] = {"Fokus", "Fajar", "Fisik", "Foto", "Fakta"},
-    ["g"] = {"Gajah", "Gelas", "Gitar", "Garam", "Gurun"},
-    ["h"] = {"Hujan", "Hutan", "Hakim", "Hantu", "Handuk"},
-    ["i"] = {"Ikan", "Intan", "Izin", "Ibu", "Istana"},
-    ["j"] = {"Jeruk", "Jalan", "Jaring", "Jerapah", "Jambu"},
-    ["k"] = {"Kuda", "Kapas", "Kasur", "Kancil", "Kamera"},
-    ["l"] = {"Lampu", "Lari", "Lidah", "Langit", "Lemon"},
-    ["m"] = {"Makan", "Mobil", "Madu", "Mawar", "Musang"},
-    ["n"] = {"Nasi", "Naga", "Nomor", "Nanas", "Nyamuk"},
-    ["o"] = {"Obat", "Orang", "Otot", "Obeng", "Ondel"},
-    ["p"] = {"Pintu", "Pasir", "Paku", "Pohon", "Panda"},
-    ["r"] = {"Roda", "Raja", "Rumah", "Rantai", "Rusa"},
-    ["s"] = {"Sapi", "Sapu", "Susu", "Semut", "Sendok"},
-    ["t"] = {"Tali", "Tebu", "Tikus", "Tangga", "Topi"},
-    ["u"] = {"Ular", "Uang", "Unta", "Udang", "Ungu"},
-    ["w"] = {"Wajah", "Warteg", "Warna", "Wajan", "Wortel"},
-    ["y"] = {"Yatim", "Yakin", "Yoyo", "Yuyu", "Yodium"},
-    ["ya"] = {"Yakin", "Yatim", "Yasin", "Yodium", "Yudisial", "Yuyu"}
+local CreativeBrain = {
+    ["a"] = {"Antariksa", "Aspirasi", "Ambisi"},
+    ["b"] = {"Bakwan", "Brutal", "Bahari"},
+    ["c"] = {"Cahaya", "Cemara", "Cendekia"},
+    ["d"] = {"Dinamis", "Drakula", "Dahsyat"},
+    ["e"] = {"Eksotis", "Evolusi", "Empati"},
+    ["f"] = {"Fenomena", "Fantastis", "Fiksi"},
+    ["g"] = {"Galaksi", "Gelora", "Gemerlap"},
+    ["h"] = {"Harmoni", "Histeris", "Hakikat"},
+    ["i"] = {"Ilusi", "Inspirasi", "Inovasi"},
+    ["j"] = {"Jelajah", "Jendela", "Jelita"},
+    ["k"] = {"Kristal", "Kharisma", "Kompleks"},
+    ["l"] = {"Lentera", "Legenda", "Lestari"},
+    ["m"] = {"Misteri", "Metamorfosa", "Militan"},
+    ["n"] = {"Nurani", "Nostalgia", "Narasi"},
+    ["o"] = {"Optimis", "Obsesi", "Otentik"},
+    ["p"] = {"Paradoks", "Pesona", "Prestige"},
+    ["r"] = {"Radiasi", "Revolusi", "Resonansi"},
+    ["s"] = {"Spektakuler", "Simfoni", "Sinergi"},
+    ["t"] = {"Tragedi", "Transparansi", "Teori"},
+    ["u"] = {"Utopia", "Universal", "Unik"},
+    ["w"] = {"Wawasan", "Wahyu", "Wujud"},
+    ["y"] = {"Yurisdiksi", "Yudisial", "Yakin"},
+    ["z"] = {"Zodiak", "Zaman", "Zeni"},
+    ["ng"] = {"Ngantuk", "Nganggur", "Ngebut"},
+    ["ya"] = {"Yakin", "Yatama", "Yasin"},
+    ["ny"] = {"Nyanyi", "Nyaman", "Nyata"}
 }
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FANN_UI"; ScreenGui.Parent = game:GetService("CoreGui"); ScreenGui.ResetOnSpawn = false
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 250, 0, 280)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -140)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = Color3.new(1, 1, 0)
+MainFrame.Active = true; MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 240, 0, 260); MainFrame.Position = UDim2.new(0, 20, 0.4, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); MainFrame.BorderSizePixel = 4
-MainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255); MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Parent = ScreenGui
+MainFrame:TweenSize(UDim2.new(0, 250, 0, 280), "Out", "Back", 0.6, true)
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "FANN"; Title.Font = Enum.Font.SourceSansBold
-Title.TextColor3 = Color3.new(1, 1, 0); Title.TextSize = 30; Title.BackgroundTransparency = 1; Title.Parent = MainFrame
+local MinBtn = Instance.new("TextButton", MainFrame)
+MinBtn.Size = UDim2.new(0, 30, 0, 30); MinBtn.Position = UDim2.new(1, -35, 0, 5)
+MinBtn.Text = "X"; MinBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+MinBtn.TextColor3 = Color3.new(1, 1, 1); MinBtn.Font = Enum.Font.SourceSansBold
 
-local function addFeature(name, yPos, callback)
-    local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0, 130, 0, 30); lbl.Position = UDim2.new(0.05, 0, 0, yPos)
-    lbl.Text = name; lbl.Font = Enum.Font.SourceSansBold; lbl.TextColor3 = Color3.new(1, 1, 1)
-    lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.BackgroundTransparency = 1; lbl.Parent = MainFrame
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 65, 0, 25); btn.Position = UDim2.new(0.65, 0, 0, yPos + 2)
-    btn.Text = "OFF"; btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0); btn.Font = Enum.Font.SourceSansBold
-    btn.TextColor3 = Color3.new(1, 1, 1); btn.Parent = MainFrame
-    btn.MouseButton1Click:Connect(function() local state = callback(); btn.Text = state and "ON" or "OFF"; btn.BackgroundColor3 = state and Color3.fromRGB(0, 160, 0) or Color3.fromRGB(180, 0, 0) end)
+MinBtn.MouseButton1Click:Connect(function()
+    if not Is_Minimized then
+        MainFrame:TweenSize(UDim2.new(0, 100, 0, 40), "Out", "Quad", 0.4, true)
+        MinBtn.Text = "+"; MinBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0); Is_Minimized = true
+    else
+        MainFrame:TweenSize(UDim2.new(0, 250, 0, 280), "Out", "Back", 0.5, true)
+        MinBtn.Text = "X"; MinBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0); Is_Minimized = false
+    end
+end)
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(0.8, 0, 0, 45); Title.Text = "FANN V2"; Title.TextColor3 = Color3.new(1, 1, 0)
+Title.TextSize = 25; Title.Font = Enum.Font.SourceSansBold; Title.BackgroundTransparency = 1
+
+local function addBtn(name, y, callback)
+    local b = Instance.new("TextButton", MainFrame)
+    b.Size = UDim2.new(0.9, 0, 0, 35); b.Position = UDim2.new(0.05, 0, 0, y)
+    b.Text = name..": OFF"; b.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    b.TextColor3 = Color3.new(1, 1, 1); b.Font = Enum.Font.SourceSansBold
+    b.MouseButton1Click:Connect(function()
+        local s = callback(); b.Text = name..(s and ": ON" or ": OFF")
+        b.BackgroundColor3 = s and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+    end)
 end
 
-addFeature("ESP", 55, function() ESP_Enabled = not ESP_Enabled return ESP_Enabled end)
-addFeature("Game Lanjut Kata", 95, function() Helper_Enabled = not Helper_Enabled return Helper_Enabled end)
+addBtn("ESP PLAYER", 55, function() ESP_Enabled = not ESP_Enabled return ESP_Enabled end)
+addBtn("AI BRAIN", 100, function() Helper_Enabled = not Helper_Enabled return Helper_Enabled end)
 
-local SugBox = Instance.new("Frame")
-SugBox.Size = UDim2.new(0.9, 0, 0, 100); SugBox.Position = UDim2.new(0.05, 0, 0, 140)
-SugBox.BackgroundColor3 = Color3.new(0, 0, 0); SugBox.BorderSizePixel = 1; SugBox.BorderColor3 = Color3.new(1, 1, 0); SugBox.Parent = MainFrame
+local ResBox = Instance.new("Frame", MainFrame)
+ResBox.Size = UDim2.new(0.9, 0, 0, 100); ResBox.Position = UDim2.new(0.05, 0, 0, 150)
+ResBox.BackgroundColor3 = Color3.new(0, 0, 0); ResBox.BorderColor3 = Color3.new(1, 1, 0)
 
-local SugTxt = Instance.new("TextLabel")
-SugTxt.Size = UDim2.new(1, 0, 1, 0); SugTxt.Text = "Menunggu lawan..."; SugTxt.TextColor3 = Color3.fromRGB(0, 255, 255)
-SugTxt.TextWrapped = true; SugTxt.TextScaled = true; SugTxt.BackgroundTransparency = 1; SugTxt.Parent = SugBox
+local ResTxt = Instance.new("TextLabel", ResBox)
+ResTxt.Size = UDim2.new(1, 0, 1, 0); ResTxt.Text = "Menunggu..."; ResTxt.TextColor3 = Color3.new(0, 1, 1)
+ResTxt.TextScaled = true; ResTxt.BackgroundTransparency = 1
+
+local function GetCreativeAnswer(msg)
+    msg = msg:lower():gsub("%s+", "")
+    local lastTwo = msg:sub(-2); local lastOne = msg:sub(-1)
+    local pilihan = CreativeBrain[lastTwo] or CreativeBrain[lastOne]
+    if pilihan then
+        local kata = pilihan[math.random(1, #pilihan)]
+        ResTxt.Text = "Jawab: "..kata:upper()
+        if setclipboard then setclipboard(kata) end
+    end
+end
 
 game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.OnMessageDoneFiltering.OnClientEvent:Connect(function(data)
-    if Helper_Enabled and data.FromSpeaker ~= LocalPlayer.Name then
-        local msg = data.Message:lower()
-        if msg:sub(-2) == "ya" then
-            SugTxt.Text = "Lawan: "..msg.."\nSaran (YA):\n"..table.concat(Kamus["ya"], ", ")
-        else
-            local last = msg:match("%a$")
-            if last and Kamus[last] then SugTxt.Text = "Lawan: "..msg.."\nSaran ("..last:upper().."):\n"..table.concat(Kamus[last], ", ") end
-        end
-    end
+    if Helper_Enabled and data.FromSpeaker ~= LocalPlayer.Name then GetCreativeAnswer(data.Message) end
 end)
 
 game:GetService("RunService").RenderStepped:Connect(function()
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
-            local h = p.Character:FindFirstChild("ESPHighlight") or Instance.new("Highlight", p.Character)
-            h.Name = "ESPHighlight"; h.Enabled = ESP_Enabled; h.FillColor = Color3.fromRGB(255, 0, 0)
+            local h = p.Character:FindFirstChild("FANN_ESP") or Instance.new("Highlight", p.Character)
+            h.Name = "FANN_ESP"; h.Enabled = ESP_Enabled; h.FillColor = Color3.new(1, 1, 0)
         end
     end
 end)
