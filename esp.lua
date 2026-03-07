@@ -1,74 +1,51 @@
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- UI UTAMA
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local function CreateESP(Player)
+    -- Membuat Highlight (Kotak Tembus Pandang)
+    local Highlight = Instance.new("Highlight")
+    Highlight.Name = "ESP_Highlight"
+    Highlight.FillTransparency = 0.5
+    Highlight.OutlineTransparency = 0
+    Highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Warna Isi (Merah)
+    Highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- Warna Garis (Putih)
 
--- 1. TOMBOL BUKA/TUTUP (MULUS)
-local Toggle = Instance.new("TextButton", ScreenGui)
-Toggle.Size = UDim2.new(0, 100, 0, 35)
-Toggle.Position = UDim2.new(0, 15, 0, 15)
-Toggle.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Toggle.Text = "MENU"
-Toggle.TextColor3 = Color3.fromRGB(0, 255, 255)
-Toggle.Font = Enum.Font.GothamBold
-Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 10)
-local TStroke = Instance.new("UIStroke", Toggle)
-TStroke.Color = Color3.fromRGB(0, 255, 255)
-TStroke.Thickness = 1.5
+    -- Membuat Nama di Atas Kepala
+    local Billboard = Instance.new("BillboardGui")
+    Billboard.Name = "ESP_Name"
+    Billboard.Size = UDim2.new(0, 200, 0, 50)
+    Billboard.Adornee = nil
+    Billboard.AlwaysOnTop = true
+    Billboard.ExtentsOffset = Vector3.new(0, 3, 0)
 
--- 2. PANEL MENU (KOTAK MULUS)
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 240, 0, 200)
-Main.Position = UDim2.new(0.5, -120, 0.5, -100)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Main.Active = true
-Main.Draggable = true -- Biar bisa digeser
+    local NameLabel = Instance.new("TextLabel", Billboard)
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.Size = UDim2.new(1, 0, 1, 0)
+    NameLabel.Text = Player.Name
+    NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NameLabel.TextStrokeTransparency = 0
+    NameLabel.Font = Enum.Font.SourceSansBold
+    NameLabel.TextSize = 14
 
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 15)
-local MStroke = Instance.new("UIStroke", Main)
-MStroke.Color = Color3.fromRGB(0, 255, 150) -- Hijau Neon
-MStroke.Thickness = 2
-
--- FUNGSI BUKA TUTUP
-Toggle.MouseButton1Click:Connect(function()
-    Main.Visible = not Main.Visible
-end)
-
--- JUDUL
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "FISHZAR NEW"
-Title.TextColor3 = Color3.fromRGB(0, 255, 150)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-
--- TOMBOL FITUR (CONTOH DASAR)
-local function AddButton(name, pos, callback)
-    local Btn = Instance.new("TextButton", Main)
-    Btn.Size = UDim2.new(0.9, 0, 0, 40)
-    Btn.Position = pos
-    Btn.Text = name .. ": OFF"
-    Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Btn.TextColor3 = Color3.new(1, 1, 1)
-    Btn.Font = Enum.Font.GothamSemibold
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
-    
-    local active = false
-    Btn.MouseButton1Click:Connect(function()
-        active = not active
-        Btn.Text = name .. (active and ": ON" or ": OFF")
-        Btn.BackgroundColor3 = active and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(30, 30, 30)
-        callback(active)
+    -- Update Posisi & Cek Karakter
+    RunService.RenderStepped:Connect(function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            Highlight.Parent = Player.Character
+            Billboard.Parent = Player.Character.HumanoidRootPart
+            Billboard.Adornee = Player.Character.HumanoidRootPart
+        else
+            Highlight.Parent = nil
+            Billboard.Parent = nil
+        end
     end)
 end
 
--- Masukkan fungsi di sini
-AddButton("AUTO FISH", UDim2.new(0.05, 0, 0, 60), function(v)
-    print("Auto Fish is now:", v)
-end)
+-- Jalankan untuk semua pemain yang masuk
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then CreateESP(p) end
+end
 
-AddButton("AUTO COLLECT", UDim2.new(0.05, 0, 0, 110), function(v)
-    print("Auto Collect is now:", v)
+Players.PlayerAdded:Connect(function(p)
+    if p ~= LocalPlayer then CreateESP(p) end
 end)
