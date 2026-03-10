@@ -1,131 +1,102 @@
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- GOOGLE DATABASE (RIBURAN KATA INDONESIA)
+-- DATABASE KATA RAKSASA (Fokus Suku Kata Game Ini)
 local Kamus = {
-    ["a"] = {"apel", "ayam", "awan", "api", "air", "asap", "abang", "alasan", "alam", "akal", "anak", "asli", "aman"},
-    ["an"] = {"angin", "antar", "anda", "makan", "nanti", "bangun", "jangan", "andika", "antri", "ancam", "anda", "andong"},
-    ["ba"] = {"baca", "bawa", "batu", "baru", "balap", "bahaya", "bangun", "bambu", "badak", "bakso", "batik", "banjir"},
-    ["ng"] = {"ngantuk", "ngeri", "nganga", "pelangi", "bunga", "tangan", "singa", "mangga", "tangga", "telinga", "bangga"},
-    ["ka"] = {"kaki", "kaca", "kapan", "kamu", "makan", "kancil", "kamus", "kasur", "kapal", "kabar", "kawat", "karya"},
-    ["me"] = {"merah", "meja", "melati", "menang", "mewah", "melihat", "memasak", "melompat", "menari", "menulis", "merdu"},
-    ["di"] = {"didik", "dinding", "dinas", "diam", "dingin", "diriku", "disana", "dunia", "dapur", "dompet", "datang"},
-    ["tu"] = {"tujuh", "tulis", "tutup", "tulang", "tunggu", "tukar", "tujuan", "tupai", "tanda", "taman", "tamu"},
-    ["ma"] = {"makan", "malam", "madu", "macan", "mawar", "mampu", "manis", "mandi", "marah", "masuk", "masak"},
-    ["si"] = {"siang", "siapa", "singa", "sikat", "siku", "siput", "sirap", "sisir", "siswa", "siaga", "silat"},
-    ["ri"] = {"rindu", "ringan", "ribu", "rimba", "risiko", "ria", "ribut", "rimba", "ritual", "riang", "rincian"},
-    ["la"] = {"lari", "lama", "lampu", "langit", "lantai", "lapar", "lapis", "labu", "lalat", "lahan", "layar"},
-    ["pa"] = {"padi", "pagi", "panas", "pasir", "pagar", "pajak", "paku", "paman", "panah", "pandai", "pantai"},
-    ["sa"] = {"sapi", "satu", "saya", "sana", "sapa", "sabar", "sabun", "sajak", "sakit", "salam", "salju"},
-    ["te"] = {"tepi", "tebu", "tegas", "telur", "teman", "tempe", "tenang", "tenda", "tepuk", "terang", "tetap"}
+    ["an"] = {"angin", "andika", "antar", "anda", "hantu", "makan", "minuman", "pantai", "tanda"},
+    ["ba"] = {"baca", "bawa", "batu", "baru", "balap", "bahaya", "bangun", "bambu", "badak"},
+    ["ng"] = {"ngantuk", "ngeri", "nganga", "pelangi", "bunga", "tangan", "singa", "mangga", "tangga"},
+    ["ka"] = {"kaki", "kaca", "kapan", "kamu", "makan", "kancil", "kamus", "kasur", "kapal"},
+    ["nu"] = {"nuklir", "nusa", "nujum", "nugget", "nulis"},
+    ["ni"] = {"nilai", "niat", "nipis", "nikah", "nila", "nista"},
+    ["p"] = {"paku", "pagi", "padi", "paman", "panah", "pantai", "pusing", "pulau"},
+    ["i"] = {"ikan", "ibu", "itik", "indah", "ilmu", "impian", "istana", "iseng"},
 }
 
--- UI SETUP (GOOGLE LOOKS)
-local GUI_ID = "FANN_GOOGLE_SEARCH"
+-- UI SETUP (ALA ZENTAZZ TAPI STYLE GOOGLE)
+local GUI_ID = "FANN_TURBO_HUB"
 if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = GUI_ID
-
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 260, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -130, 0.2, 0)
+MainFrame.Size = UDim2.new(0, 250, 0, 300)
+MainFrame.Position = UDim2.new(0.8, 0, 0.3, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 31, 34)
-MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
-
--- Bar Atas (Google Colors)
-local RainbowBar = Instance.new("Frame", MainFrame)
-RainbowBar.Size = UDim2.new(1, 0, 0, 4)
-RainbowBar.BackgroundColor3 = Color3.fromRGB(66, 133, 244)
-Instance.new("UICorner", RainbowBar)
+Instance.new("UICorner", MainFrame)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "Fann Search"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "FANN TURBO SEARCH"
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.BackgroundTransparency = 1
 
-local SearchBar = Instance.new("Frame", MainFrame)
-SearchBar.Size = UDim2.new(0.9, 0, 0, 30)
-SearchBar.Position = UDim2.new(0.05, 0, 0.2, 0)
-SearchBar.BackgroundColor3 = Color3.fromRGB(48, 49, 52)
-Instance.new("UICorner", SearchBar).CornerRadius = UDim.new(0, 15)
-
-local SearchText = Instance.new("TextLabel", SearchBar)
-SearchText.Size = UDim2.new(0.9, 0, 1, 0)
-SearchText.Position = UDim2.new(0.05, 0, 0, 0)
-SearchText.Text = "🔍 Mencari Huruf..."
-SearchText.TextColor3 = Color3.fromRGB(180, 180, 180)
-SearchText.BackgroundTransparency = 1
-SearchText.TextXAlignment = Enum.TextXAlignment.Left
-SearchText.Font = Enum.Font.Gotham
-SearchText.TextSize = 12
+local StatusLabel = Instance.new("TextLabel", MainFrame)
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0, 0, 0.15, 0)
+StatusLabel.Text = "Menunggu Giliran..."
+StatusLabel.TextColor3 = Color3.fromRGB(66, 133, 244)
+StatusLabel.BackgroundTransparency = 1
 
 local ResultList = Instance.new("ScrollingFrame", MainFrame)
-ResultList.Size = UDim2.new(0.9, 0, 0.6, 0)
-ResultList.Position = UDim2.new(0.05, 0, 0.35, 0)
+ResultList.Size = UDim2.new(0.9, 0, 0.65, 0)
+ResultList.Position = UDim2.new(0.05, 0, 0.3, 0)
 ResultList.BackgroundTransparency = 1
 ResultList.ScrollBarThickness = 0
 local UIList = Instance.new("UIListLayout", ResultList)
-UIList.Padding = UDim.new(0, 6)
+UIList.Padding = UDim.new(0, 5)
 
--- FUNGSI SEARCH (GOOGLE STYLE)
-local function SearchGoogle(huruf)
-    for _, v in pairs(ResultList:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
+-- FUNGSI AUTO-TYPE (INI YANG BIKIN SAKTI KEK DI VIDEO)
+local function AutoType(word)
+    -- Simulasi ngetik di keyboard
+    for i = 1, #word do
+        local char = word:sub(i, i)
+        VirtualInputManager:SendKeyEvent(true, char:upper(), false, game)
+        task.wait(0.05) -- Kecepatan ngetik
     end
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(true, "Return", false, game) -- Otomatis Enter
+end
 
-    SearchText.Text = "🔍 " .. huruf:upper()
-    local hasil = Kamus[huruf:lower()]
+-- UPDATE HASIL
+local function UpdateResults(huruf)
+    for _, v in pairs(ResultList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    StatusLabel.Text = "Huruf: " .. huruf:upper()
+    
+    local list = Kamus[huruf:lower()]
+    if list then
+        for _, kata in pairs(list) do
+            local btn = Instance.new("TextButton", ResultList)
+            btn.Size = UDim2.new(1, 0, 0, 35)
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.Text = "   " .. kata:upper()
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.Font = Enum.Font.GothamMedium
+            Instance.new("UICorner", btn)
 
-    if hasil then
-        for _, kata in pairs(hasil) do
-            local opt = Instance.new("TextButton", ResultList)
-            opt.Size = UDim2.new(1, 0, 0, 32)
-            opt.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            opt.Text = "      " .. kata
-            opt.TextColor3 = Color3.fromRGB(230, 230, 230)
-            opt.TextXAlignment = Enum.TextXAlignment.Left
-            opt.Font = Enum.Font.Gotham
-            opt.TextSize = 13
-            Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 8)
-
-            opt.MouseButton1Click:Connect(function()
-                setclipboard(kata) -- Fitur copy instan
-                opt.BackgroundColor3 = Color3.fromRGB(66, 133, 244)
-                opt.Text = "      ✅ TERCOPY!"
-                task.wait(0.5)
-                opt.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                opt.Text = "      " .. kata
+            btn.MouseButton1Click:Connect(function()
+                StatusLabel.Text = "Ngetik: " .. kata:upper()
+                AutoType(kata)
             end)
         end
-    else
-        SearchText.Text = "🔍 " .. huruf:upper() .. " (Tak ada hasil)"
     end
 end
 
--- PENDETEKSI HURUF OTOMATIS
-local lastDetected = ""
+-- SCANNER TARGET (Fokus ke kotak putih di video)
+local lastFound = ""
 task.spawn(function()
     while task.wait(0.2) do
-        local found = false
         for _, v in pairs(PlayerGui:GetDescendants()) do
-            if v:IsA("TextLabel") and v.Visible == true and v.TextTransparency < 1 then
-                local txt = v.Text:gsub("%s+", ""):lower()
-                -- Deteksi suku kata 1-2 huruf
-                if #txt >= 1 and #txt <= 2 and txt:match("%a") then
-                    if txt ~= lastDetected then
-                        lastDetected = txt
-                        SearchGoogle(txt)
-                    end
-                    found = true
-                    break
+            if v:IsA("TextLabel") and v.Visible == true and v.Parent.Name == "Frame" then -- Ciri-ciri kotak di video
+                local t = v.Text:gsub("%s+", ""):lower()
+                if #t >= 1 and #t <= 2 and t:match("%a") and t ~= lastFound then
+                    lastFound = t
+                    UpdateResults(t)
                 end
             end
         end
