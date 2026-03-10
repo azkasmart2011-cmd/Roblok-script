@@ -1,117 +1,106 @@
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+-- Fishzar ULTRA OP Script
 
--- DATABASE KATA MEGA (LENGKAP)
-local KamusRaksasa = {
-    ["a"] = {"apel", "ayam", "awan", "api", "air", "asap", "abang", "alasan", "alam", "asrama", "akal", "anak", "asli", "aman"},
-    ["an"] = {"angin", "andika", "antar", "anda", "hantu", "makan", "minuman", "pantai", "tanda", "antri", "ancam", "aneka"},
-    ["ba"] = {"baca", "bawa", "batu", "baru", "balap", "bahaya", "bangun", "bambu", "badak", "bakso", "batik", "banjir"},
-    ["ng"] = {"ngantuk", "ngeri", "nganga", "pelangi", "bunga", "tangan", "singa", "mangga", "tangga", "telinga", "bangga"},
-    ["ka"] = {"kaki", "kaca", "kapan", "kamu", "makan", "kancil", "kamus", "kasur", "kapal", "kabar", "kawat", "karya"},
-    ["me"] = {"merah", "meja", "melati", "menang", "mewah", "melihat", "memasak", "melompat", "menari", "menulis", "merdu"},
-    ["di"] = {"didik", "dinding", "dinas", "diam", "dingin", "diriku", "disana", "dunia", "dapur", "dompet", "datang"},
-    ["tu"] = {"tujuh", "tulis", "tutup", "tulang", "tunggu", "tukar", "tujuan", "tupai", "tanda", "taman", "tamu"},
-    ["ma"] = {"makan", "malam", "madu", "macan", "mawar", "mampu", "manis", "mandi", "marah", "masuk", "masak"},
-    ["i"] = {"ikan", "ibu", "itik", "indah", "ilmu", "impian", "istana", "iseng", "iklan", "ikatan", "ikut", "imbas"},
-    ["nu"] = {"nuklir", "nusa", "nujum", "nugget", "nulis", "nurani", "nurbaya", "nusa"},
-    ["p"] = {"paku", "pagi", "padi", "paman", "panah", "pantai", "pusing", "pulau", "papan", "pesta", "pintu"}
-}
-
-local MemoriKata = {} -- Biar gak ngulang kata
-
--- UI SETUP (DARK VIP STYLE)
-local GUI_ID = "FANN_ULTIMATE_SOLVER"
-if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
-
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 240, 0, 300)
-Frame.Position = UDim2.new(0.8, 0, 0.3, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Frame.Active = true
-Frame.Draggable = true
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
-
-local UIStroke = Instance.new("UIStroke", Frame)
-UIStroke.Color = Color3.fromRGB(255, 0, 0) -- Merah OP
-UIStroke.Thickness = 2
-
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "FANN ULTIMATE X"
-Title.TextColor3 = Color3.new(1, 0, 0)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
-Title.BackgroundTransparency = 1
-
-local List = Instance.new("ScrollingFrame", Frame)
-List.Size = UDim2.new(0.9, 0, 0.75, 0)
-List.Position = UDim2.new(0.05, 0, 0.2, 0)
-List.BackgroundTransparency = 1
-List.ScrollBarThickness = 0
-Instance.new("UIListLayout", List).Padding = UDim.new(0, 5)
-
--- FUNGSI KIRIM (TURBO INJECTION)
-local function SubmitWord(word)
-    if MemoriKata[word] then return end
-    
-    local textBox = nil
-    for _, v in pairs(PlayerGui:GetDescendants()) do
-        if v:IsA("TextBox") and v.Visible then
-            textBox = v
-            break
-        end
-    end
-
-    if textBox then
-        textBox.Text = word:upper()
-        task.wait(0.05)
-        -- Paksa tekan Enter lewat system
-        VirtualInputManager:SendKeyEvent(true, "Return", false, game)
-        MemoriKata[word] = true
-    else
-        setclipboard(word) -- Backup jika textbox tidak ketemu
-    end
-end
-
--- SCANNER SUPER SENSITIF
-local function UpdateDisplay(huruf)
-    for _, v in pairs(List:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-    
-    local suggestions = KamusRaksasa[huruf:lower()]
-    if suggestions then
-        for _, kata in pairs(suggestions) do
-            if not MemoriKata[kata] then
-                local btn = Instance.new("TextButton", List)
-                btn.Size = UDim2.new(1, 0, 0, 35)
-                btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                btn.Text = "⚡ " .. kata:upper()
-                btn.TextColor3 = Color3.new(1, 1, 1)
-                btn.Font = Enum.Font.GothamMedium
-                Instance.new("UICorner", btn)
-
-                btn.MouseButton1Click:Connect(function()
-                    SubmitWord(kata)
-                end)
-            end
-        end
-    end
-end
-
-local lastTxt = ""
-task.spawn(function()
-    while task.wait(0.1) do
-        for _, v in pairs(PlayerGui:GetDescendants()) do
-            -- Fokus ke TextLabel di frame tengah (sesuai video)
-            if v:IsA("TextLabel") and v.Visible and v.Parent.Name == "Frame" then
-                local t = v.Text:gsub("%s+", ""):lower()
-                if #t >= 1 and #t <= 2 and t:match("%a") and t ~= lastTxt then
-                    lastTxt = t
-                    UpdateDisplay(t)
-                end
-            end
-        end
-    end
+-- Anti AFK
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
 end)
+
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+
+local Window = OrionLib:MakeWindow({
+	Name = "Fishzar ULTRA | Azka",
+	HidePremium = false,
+	SaveConfig = false,
+	ConfigFolder = "FishzarUltra"
+})
+
+-- TAB FARM
+local Farm = Window:MakeTab({
+	Name = "Auto Farm",
+	Icon = "rbxassetid://4483345998"
+})
+
+-- AUTO FISH
+Farm:AddToggle({
+	Name = "Auto Fish",
+	Default = false,
+	Callback = function(v)
+		_G.AutoFish = v
+		while _G.AutoFish do
+			task.wait(1)
+			pcall(function()
+				game:GetService("ReplicatedStorage").Events.Fish:FireServer()
+			end)
+		end
+	end
+})
+
+-- AUTO REEL
+Farm:AddToggle({
+	Name = "Auto Reel",
+	Default = false,
+	Callback = function(v)
+		_G.AutoReel = v
+		while _G.AutoReel do
+			task.wait(0.3)
+			pcall(function()
+				game:GetService("ReplicatedStorage").Events.Reel:FireServer()
+			end)
+		end
+	end
+})
+
+-- AUTO SELL
+Farm:AddToggle({
+	Name = "Auto Sell",
+	Default = false,
+	Callback = function(v)
+		_G.AutoSell = v
+		while _G.AutoSell do
+			task.wait(7)
+			pcall(function()
+				game:GetService("ReplicatedStorage").Events.SellAll:FireServer()
+			end)
+		end
+	end
+})
+
+-- TAB ESP
+local ESP = Window:MakeTab({
+	Name = "ESP",
+	Icon = "rbxassetid://4483345998"
+})
+
+ESP:AddButton({
+	Name = "ESP Player",
+	Callback = function()
+		for _,v in pairs(game.Players:GetPlayers()) do
+			if v ~= game.Players.LocalPlayer then
+				if v.Character then
+					local h = Instance.new("Highlight")
+					h.Parent = v.Character
+				end
+			end
+		end
+	end
+})
+
+-- TAB TELEPORT
+local TP = Window:MakeTab({
+	Name = "Teleport",
+	Icon = "rbxassetid://4483345998"
+})
+
+TP:AddButton({
+	Name = "Teleport Fishing Spot",
+	Callback = function()
+		local char = game.Players.LocalPlayer.Character
+		if char then
+			char:MoveTo(Vector3.new(120,10,-80))
+		end
+	end
+})
+
+OrionLib:Init()
