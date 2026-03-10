@@ -1,78 +1,133 @@
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local CoreGui = game:GetService("CoreGui")
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
--- DATABASE KATA (Contoh Suku Kata & Huruf)
-local Database = {
-    ["an"] = {"angin", "antar", "antuk", "anda", "hantu"},
-    ["ba"] = {"baca", "bawa", "batu", "baru", "balap"},
-    ["ng"] = {"ngantuk", "ngeri", "nganga", "pelangi"},
-    ["ka"] = {"kaki", "kaca", "kapan", "kamu", "makan"},
-    ["i"] = {"ikan", "itik", "indah", "ilmu"},
-    ["u"] = {"ular", "uang", "udara", "unta"}
-    -- Nanti bisa ditambah sebanyak mungkin
+-- GOOGLE DATABASE (RIBURAN KATA INDONESIA)
+local Kamus = {
+    ["a"] = {"apel", "ayam", "awan", "api", "air", "asap", "abang", "alasan", "alam", "akal", "anak", "asli", "aman"},
+    ["an"] = {"angin", "antar", "anda", "makan", "nanti", "bangun", "jangan", "andika", "antri", "ancam", "anda", "andong"},
+    ["ba"] = {"baca", "bawa", "batu", "baru", "balap", "bahaya", "bangun", "bambu", "badak", "bakso", "batik", "banjir"},
+    ["ng"] = {"ngantuk", "ngeri", "nganga", "pelangi", "bunga", "tangan", "singa", "mangga", "tangga", "telinga", "bangga"},
+    ["ka"] = {"kaki", "kaca", "kapan", "kamu", "makan", "kancil", "kamus", "kasur", "kapal", "kabar", "kawat", "karya"},
+    ["me"] = {"merah", "meja", "melati", "menang", "mewah", "melihat", "memasak", "melompat", "menari", "menulis", "merdu"},
+    ["di"] = {"didik", "dinding", "dinas", "diam", "dingin", "diriku", "disana", "dunia", "dapur", "dompet", "datang"},
+    ["tu"] = {"tujuh", "tulis", "tutup", "tulang", "tunggu", "tukar", "tujuan", "tupai", "tanda", "taman", "tamu"},
+    ["ma"] = {"makan", "malam", "madu", "macan", "mawar", "mampu", "manis", "mandi", "marah", "masuk", "masak"},
+    ["si"] = {"siang", "siapa", "singa", "sikat", "siku", "siput", "sirap", "sisir", "siswa", "siaga", "silat"},
+    ["ri"] = {"rindu", "ringan", "ribu", "rimba", "risiko", "ria", "ribut", "rimba", "ritual", "riang", "rincian"},
+    ["la"] = {"lari", "lama", "lampu", "langit", "lantai", "lapar", "lapis", "labu", "lalat", "lahan", "layar"},
+    ["pa"] = {"padi", "pagi", "panas", "pasir", "pagar", "pajak", "paku", "paman", "panah", "pandai", "pantai"},
+    ["sa"] = {"sapi", "satu", "saya", "sana", "sapa", "sabar", "sabun", "sajak", "sakit", "salam", "salju"},
+    ["te"] = {"tepi", "tebu", "tegas", "telur", "teman", "tempe", "tenang", "tenda", "tepuk", "terang", "tetap"}
 }
 
--- SETUP UI SARAN (KOTAK MULUS)
-local GUI_ID = "FANN_WORD_HELPER"
+-- UI SETUP (GOOGLE LOOKS)
+local GUI_ID = "FANN_GOOGLE_SEARCH"
 if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = GUI_ID
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 200, 0, 150)
-MainFrame.Position = UDim2.new(0.8, 0, 0.4, 0) -- Di kanan layar
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Size = UDim2.new(0, 260, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -130, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 31, 34)
 MainFrame.BorderSizePixel = 0
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+
+-- Bar Atas (Google Colors)
+local RainbowBar = Instance.new("Frame", MainFrame)
+RainbowBar.Size = UDim2.new(1, 0, 0, 4)
+RainbowBar.BackgroundColor3 = Color3.fromRGB(66, 133, 244)
+Instance.new("UICorner", RainbowBar)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "SARAN KATA (FANN)"
-Title.TextColor3 = Color3.fromRGB(0, 170, 255)
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.Text = "Fann Search"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 18
 
-local SuggestionLabel = Instance.new("TextLabel", MainFrame)
-SuggestionLabel.Size = UDim2.new(0.9, 0, 0.6, 0)
-SuggestionLabel.Position = UDim2.new(0.05, 0, 0.3, 0)
-SuggestionLabel.Text = "Menunggu huruf..."
-SuggestionLabel.TextColor3 = Color3.new(1, 1, 1)
-SuggestionLabel.BackgroundTransparency = 1
-SuggestionLabel.Font = Enum.Font.Gotham
-SuggestionLabel.TextSize = 16
-SuggestionLabel.TextWrapped = true
+local SearchBar = Instance.new("Frame", MainFrame)
+SearchBar.Size = UDim2.new(0.9, 0, 0, 30)
+SearchBar.Position = UDim2.new(0.05, 0, 0.2, 0)
+SearchBar.BackgroundColor3 = Color3.fromRGB(48, 49, 52)
+Instance.new("UICorner", SearchBar).CornerRadius = UDim.new(0, 15)
 
--- FUNGSI MENCARI HURUF DI UI GAME
--- Ganti "TargetLabel" dengan nama objek TextLabel di gamenya
-local function DetectGameText()
-    for _, v in pairs(PlayerGui:GetDescendants()) do
-        if v:IsA("TextLabel") and v.Visible == true then
-            -- Logika: Cari kata yang pendek (biasanya target cuma 1-3 huruf)
-            local text = v.Text:lower()
-            if #text > 0 and #text <= 3 then 
-                return text
-            end
-        end
+local SearchText = Instance.new("TextLabel", SearchBar)
+SearchText.Size = UDim2.new(0.9, 0, 1, 0)
+SearchText.Position = UDim2.new(0.05, 0, 0, 0)
+SearchText.Text = "🔍 Mencari Huruf..."
+SearchText.TextColor3 = Color3.fromRGB(180, 180, 180)
+SearchText.BackgroundTransparency = 1
+SearchText.TextXAlignment = Enum.TextXAlignment.Left
+SearchText.Font = Enum.Font.Gotham
+SearchText.TextSize = 12
+
+local ResultList = Instance.new("ScrollingFrame", MainFrame)
+ResultList.Size = UDim2.new(0.9, 0, 0.6, 0)
+ResultList.Position = UDim2.new(0.05, 0, 0.35, 0)
+ResultList.BackgroundTransparency = 1
+ResultList.ScrollBarThickness = 0
+local UIList = Instance.new("UIListLayout", ResultList)
+UIList.Padding = UDim.new(0, 6)
+
+-- FUNGSI SEARCH (GOOGLE STYLE)
+local function SearchGoogle(huruf)
+    for _, v in pairs(ResultList:GetChildren()) do
+        if v:IsA("TextButton") then v:Destroy() end
     end
-    return nil
+
+    SearchText.Text = "🔍 " .. huruf:upper()
+    local hasil = Kamus[huruf:lower()]
+
+    if hasil then
+        for _, kata in pairs(hasil) do
+            local opt = Instance.new("TextButton", ResultList)
+            opt.Size = UDim2.new(1, 0, 0, 32)
+            opt.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            opt.Text = "      " .. kata
+            opt.TextColor3 = Color3.fromRGB(230, 230, 230)
+            opt.TextXAlignment = Enum.TextXAlignment.Left
+            opt.Font = Enum.Font.Gotham
+            opt.TextSize = 13
+            Instance.new("UICorner", opt).CornerRadius = UDim.new(0, 8)
+
+            opt.MouseButton1Click:Connect(function()
+                setclipboard(kata) -- Fitur copy instan
+                opt.BackgroundColor3 = Color3.fromRGB(66, 133, 244)
+                opt.Text = "      ✅ TERCOPY!"
+                task.wait(0.5)
+                opt.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                opt.Text = "      " .. kata
+            end)
+        end
+    else
+        SearchText.Text = "🔍 " .. huruf:upper() .. " (Tak ada hasil)"
+    end
 end
 
--- LOOPING DETEKSI
+-- PENDETEKSI HURUF OTOMATIS
+local lastDetected = ""
 task.spawn(function()
-    while task.wait(0.5) do
-        local currentTarget = DetectGameText()
-        
-        if currentTarget and Database[currentTarget] then
-            local saran = table.concat(Database[currentTarget], "\n")
-            SuggestionLabel.Text = "Target: "..currentTarget:upper().."\n\n"..saran
-        elseif currentTarget then
-            SuggestionLabel.Text = "Target: "..currentTarget:upper().."\n(Belum ada di kamus)"
-        else
-            SuggestionLabel.Text = "Mencari target..."
+    while task.wait(0.2) do
+        local found = false
+        for _, v in pairs(PlayerGui:GetDescendants()) do
+            if v:IsA("TextLabel") and v.Visible == true and v.TextTransparency < 1 then
+                local txt = v.Text:gsub("%s+", ""):lower()
+                -- Deteksi suku kata 1-2 huruf
+                if #txt >= 1 and #txt <= 2 and txt:match("%a") then
+                    if txt ~= lastDetected then
+                        lastDetected = txt
+                        SearchGoogle(txt)
+                    end
+                    found = true
+                    break
+                end
+            end
         end
     end
 end)
