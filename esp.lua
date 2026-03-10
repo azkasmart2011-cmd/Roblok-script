@@ -3,39 +3,52 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Nama Rahasia agar tidak mudah di-track developer dengan game:GetService("CoreGui"):FindFirstChild()
-local GUI_NAME = "System_Internal_Buffer" 
-
-if CoreGui:FindFirstChild(GUI_NAME) then
-    CoreGui[GUI_NAME]:Destroy()
-end
+-- Nama GUI disamarkan
+local GUI_ID = "FANN_PREMIUM_UI" 
+if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = GUI_NAME
+ScreenGui.Name = GUI_ID
 
--- UI Toggle
+-- DESAIN TOMBOL KOTAK MULUS
 local MainButton = Instance.new("TextButton", ScreenGui)
-MainButton.Size = UDim2.new(0, 160, 0, 45)
-MainButton.Position = UDim2.new(0, 50, 0, 50)
-MainButton.Text = "SYSTEM: READY"
-MainButton.Draggable = true -- Bisa digeser kalau menutupi UI game
+MainButton.Size = UDim2.new(0, 140, 0, 40)
+MainButton.Position = UDim2.new(0, 60, 0, 60)
+MainButton.BorderSizePixel = 0
+MainButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25) -- Hitam pekat modern
+MainButton.Text = "ESP: OFF"
+MainButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+MainButton.Font = Enum.Font.GothamMedium
+MainButton.TextSize = 14
+MainButton.AutoButtonColor = true
+
+-- UICorner untuk efek kotak mulus (Bukan bulat banget)
+local Corner = Instance.new("UICorner", MainButton)
+Corner.CornerRadius = UDim.new(0, 4) -- Radius kecil biar kotak tapi nggak tajam
+
+-- Stroke (Garis tepi) agar lebih tegas
+local Stroke = Instance.new("UIStroke", MainButton)
+Stroke.Thickness = 1.5
+Stroke.Color = Color3.fromRGB(255, 50, 50) -- Merah pas awal (OFF)
+Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 local ESP_ENABLED = false
 
--- FUNGSI PENDETEKSI PISAU (TAHAN PATCH)
-local function IsDangerous(player)
-    -- Mencari di karakter (sedang dipegang) dan di penyimpanan
-    local locations = {player.Character, player:FindFirstChildOfClass("Backpack")}
+-- FUNGSI DETEKSI KILLER
+local function IsKiller(player)
+    local char = player.Character
+    if not char then return false end
     
-    for _, loc in pairs(locations) do
+    -- Cek Tool & Nama Rahasia
+    local items = {char, player:FindFirstChild("Backpack")}
+    local keywords = {"knife", "piso", "sword", "blade", "slasher", "murderer", "kill", "gun"}
+    
+    for _, loc in pairs(items) do
         if loc then
-            -- Cari semua objek yang bertipe "Tool"
-            for _, item in pairs(loc:GetChildren()) do
-                if item:IsA("Tool") then
-                    -- Cek berdasarkan kata kunci (case insensitive) atau properti tertentu
-                    local name = item.Name:lower()
-                    if name:find("knife") or name:find("sword") or name:find("blade") or item:FindFirstChild("Slasher") then
-                        return true
+            for _, tool in pairs(loc:GetChildren()) do
+                if tool:IsA("Tool") or tool:IsA("Model") then -- Deteksi Model jika dev pakai custom system
+                    for _, word in pairs(keywords) do
+                        if tool.Name:lower():find(word) then return true end
                     end
                 end
             end
@@ -44,46 +57,68 @@ local function IsDangerous(player)
     return false
 end
 
--- FUNGSI RECURSIVE UNTUK MENEMUKAN BAGIAN TUBUH (Jika R6/R15 diubah)
-local function GetRoot(char)
-    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
-end
-
-local function CreateESP(player)
+-- FUNGSI ESP
+local function ApplyESP(player)
     RunService.RenderStepped:Connect(function()
         local char = player.Character
-        local myChar = LocalPlayer.Character
-        
-        if not ESP_ENABLED or not char or not GetRoot(char) or not myChar or not GetRoot(myChar) then
-            if char then 
-                if char:FindFirstChild("FANN_Highlight") then char.FANN_Highlight:Destroy() end
-            end
+        if not ESP_ENABLED or not char or not char:FindFirstChild("HumanoidRootPart") then
+            if char and char:FindFirstChild("FANN_High") then char.FANN_High:Destroy() end
             return
         end
 
-        -- Logika Warna
-        local color = IsDangerous(player) and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 150, 255)
+        local statusKiller = IsKiller(player)
+        local color = statusKiller and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 170, 255)
 
-        -- Highlight (Gunakan pcall agar jika error tidak menghentikan seluruh script)
-        pcall(function()
-            local high = char:FindFirstChild("FANN_Highlight") or Instance.new("Highlight")
-            high.Name = "FANN_Highlight"
-            high.Parent = char
-            high.FillColor = color
-            high.OutlineTransparency = 0
-            high.FillTransparency = 0.5
-        end)
+        -- Highlight
+        local high = char:FindFirstChild("FANN_High") or Instance.new("Highlight")
+        high.Name = "FANN_High"
+        high.Parent = char
+        high.FillColor = color
+        high.OutlineColor = Color3.new(1, 1, 1)
+        high.FillTransparency = 0.5
+
+        -- Tag Jarak
+        local head = char:FindFirstChild("Head")
+        if head then
+            local tag = head:FindFirstChild("FANN_Tag") or Instance.new("BillboardGui", head)
+            tag.Name = "FANN_Tag"
+            tag.Size = UDim2.new(0, 100, 0, 50)
+            tag.AlwaysOnTop = true
+            tag.ExtentsOffset = Vector3.new(0, 3, 0)
+
+            local label = tag:FindFirstChild("Label") or Instance.new("TextLabel", tag)
+            label.Name = "Label"
+            label.BackgroundTransparency = 1
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.Text = statusKiller and "⚠️ KILLER ⚠️" or player.Name
+            label.TextColor3 = color
+            label.Font = Enum.Font.GothamBold
+            label.TextSize = 13
+        end
     end)
 end
 
--- AUTO-RECONNECT
-Players.PlayerAdded:Connect(CreateESP)
-for _, p in pairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then CreateESP(p) end
-end
-
+-- LOGIKA TOMBOL
 MainButton.MouseButton1Click:Connect(function()
     ESP_ENABLED = not ESP_ENABLED
-    MainButton.Text = ESP_ENABLED and "ESP: ACTIVE" or "ESP: READY"
-    MainButton.TextColor3 = ESP_ENABLED and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
+    if ESP_ENABLED then
+        MainButton.Text = "ESP: ON"
+        MainButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Stroke.Color = Color3.fromRGB(0, 200, 255) -- Biru mulus saat nyala
+    else
+        MainButton.Text = "ESP: OFF"
+        MainButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+        Stroke.Color = Color3.fromRGB(255, 50, 50) -- Merah saat mati
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character then 
+                if p.Character:FindFirstChild("FANN_High") then p.Character.FANN_High:Destroy() end
+            end
+        end
+    end
 end)
+
+-- Inisialisasi
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then ApplyESP(p) end
+end
+Players.PlayerAdded:Connect(ApplyESP)
