@@ -9,36 +9,10 @@ if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = GUI_ID
 
--- [TOMBOL BULAT F]
-local ToggleGui = Instance.new("TextButton", ScreenGui)
-ToggleGui.Size = UDim2.new(0, 40, 0, 40)
-ToggleGui.Position = UDim2.new(0, 15, 0, 60)
-ToggleGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-ToggleGui.Text = "F"
-ToggleGui.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleGui.Font = Enum.Font.GothamBold
-ToggleGui.TextSize = 18
-ToggleGui.Draggable = true
-Instance.new("UICorner", ToggleGui).CornerRadius = UDim.new(1, 0)
-
--- [TABEL MENU]
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 160, 0, 100) 
-MainFrame.Position = UDim2.new(0, 65, 0, 60)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BackgroundTransparency = 0.2
-MainFrame.Visible = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
-
-local UIList = Instance.new("UIListLayout", MainFrame)
-UIList.Padding = UDim.new(0, 8)
-UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIList.VerticalAlignment = Enum.VerticalAlignment.Center
-
--- [TOMBOL ESP - KODE ASLI]
-local MainButton = Instance.new("TextButton", MainFrame)
-MainButton.Size = UDim2.new(0, 140, 0, 35)
-MainButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+local MainButton = Instance.new("TextButton", ScreenGui)
+MainButton.Size = UDim2.new(0, 140, 0, 40)
+MainButton.Position = UDim2.new(0, 60, 0, 60)
+MainButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainButton.Text = "ESP: OFF"
 MainButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 MainButton.Font = Enum.Font.GothamMedium
@@ -48,36 +22,34 @@ local Stroke = Instance.new("UIStroke", MainButton)
 Stroke.Thickness = 1.8
 Stroke.Color = Color3.fromRGB(255, 50, 50) 
 
--- [TOMBOL AUTO KILL]
-local KillButton = Instance.new("TextButton", MainFrame)
-KillButton.Size = UDim2.new(0, 140, 0, 35)
-KillButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-KillButton.Text = "AUTO KILL: OFF"
-KillButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-KillButton.Font = Enum.Font.GothamMedium
-KillButton.TextSize = 14
-Instance.new("UICorner", KillButton).CornerRadius = UDim.new(0, 4)
-local KillStroke = Instance.new("UIStroke", KillButton)
-KillStroke.Thickness = 1.8
-KillStroke.Color = Color3.fromRGB(255, 50, 50)
-
 local ESP_ENABLED = false
-local AUTOKILL_ENABLED = false
 
-ToggleGui.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-    ToggleGui.Text = MainFrame.Visible and "X" or "F"
-end)
-
--- [DETEKSI APAKAH DIA SEMBUNYI/GAK KELIHATAN]
-local function IsHidden(targetChar)
-    local myChar = LocalPlayer.Character
-    if not myChar or not targetChar:FindFirstChild("HumanoidRootPart") then return false end
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {myChar, targetChar}
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    local result = workspace:Raycast(myChar.HumanoidRootPart.Position, (targetChar.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position), params)
-    return result ~= nil -- True artinya dia ketutup tembok/lemari
+-- FITUR PINTAR: Deteksi Lemari vs Tembok Biasa
+local function CheckInsideLocker(targetChar)
+    local hrp = targetChar:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    
+    -- Sensor laser ke 4 arah (Depan, Belakang, Kiri, Kanan)
+    -- Jika di sekelilingnya ada objek sangat dekat, berarti dia di dalam lemari
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {targetChar}
+    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+    
+    local directions = {
+        Vector3.new(0, 0, 2), Vector3.new(0, 0, -2), 
+        Vector3.new(2, 0, 0), Vector3.new(-2, 0, 0)
+    }
+    
+    local hitCount = 0
+    for _, dir in pairs(directions) do
+        local result = workspace:Raycast(hrp.Position, dir, rayParams)
+        if result and result.Instance:IsA("BasePart") then
+            hitCount = hitCount + 1
+        end
+    end
+    
+    -- Jika terdeteksi objek rapat di sekelilingnya, itu lemari
+    return hitCount >= 2 
 end
 
 local function IsKiller(player)
@@ -111,23 +83,28 @@ local function ApplyESP(player)
         end
 
         local statusKiller = IsKiller(player)
-        local statusHidden = IsHidden(char)
+        local statusInLocker = CheckInsideLocker(char)
         
-        -- LOGIKA WARNA SESUAI MAU KAMU:
-        local color = Color3.fromRGB(0, 170, 255) -- Default Biru
+        -- LOGIKA WARNA:
+        -- 1. Merah (Killer)
+        -- 2. Kuning (Dalam Lemari)
+        -- 3. Biru (Normal/Dalam Rumah/Luar)
+        local color = Color3.fromRGB(0, 170, 255)
+        local labelText = player.Name
+        
         if statusKiller then
-            color = Color3.fromRGB(255, 0, 0) -- Merah kalau Killer
-        elseif statusHidden then
-            color = Color3.fromRGB(255, 255, 0) -- Kuning HANYA kalau dia gak kelihatan (di dalam objek)
+            color = Color3.fromRGB(255, 0, 0)
+            labelText = "⚠️ KILLER ⚠️"
+        elseif statusInLocker then
+            color = Color3.fromRGB(255, 255, 0)
+            labelText = "BERADA DALAM LEMARI"
         end
 
-        local high = char:FindFirstChild("FANN_High") or Instance.new("Highlight")
+        local high = char:FindFirstChild("FANN_High") or Instance.new("Highlight", char)
         high.Name = "FANN_High"
-        high.Parent = char
         high.FillColor = color
         high.FillTransparency = 0.5
-        high.OutlineColor = Color3.new(1, 1, 1)
-        high.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Memaksa karakter terlihat tembus pandang
+        high.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Tetap tembus pandang
 
         local head = char:FindFirstChild("Head")
         if head then
@@ -143,46 +120,20 @@ local function ApplyESP(player)
             label.Size = UDim2.new(1, 0, 1, 0)
             
             local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local distance = myHrp and math.floor((myHrp.Position - char.HumanoidRootPart.Position).Magnitude) or 0
+            local dist = myHrp and math.floor((myHrp.Position - char.HumanoidRootPart.Position).Magnitude) or 0
             
-            local displayName = player.Name
-            if statusKiller then displayName = "⚠️ KILLER ⚠️" 
-            elseif statusHidden then displayName = "🕵️ HIDDEN 🕵️" end
-            
-            label.Text = displayName .. "\n[" .. distance .. "m]"
+            label.Text = labelText .. "\n[" .. dist .. "m]"
             label.TextColor3 = color
             label.Font = Enum.Font.GothamBold
-            label.TextSize = 13
+            label.TextSize = 12
         end
     end)
 end
 
--- [SISANYA TETAP SAMA]
 MainButton.MouseButton1Click:Connect(function()
     ESP_ENABLED = not ESP_ENABLED
     MainButton.Text = ESP_ENABLED and "ESP: ON" or "ESP: OFF"
     Stroke.Color = ESP_ENABLED and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(255, 50, 50)
-end)
-
-KillButton.MouseButton1Click:Connect(function()
-    AUTOKILL_ENABLED = not AUTOKILL_ENABLED
-    KillButton.Text = AUTOKILL_ENABLED and "AUTO KILL: ON" or "AUTO KILL: OFF"
-    KillStroke.Color = AUTOKILL_ENABLED and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 50, 50)
-end)
-
-task.spawn(function()
-    while task.wait(0.8) do
-        if AUTOKILL_ENABLED and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                    task.wait(0.5)
-                end
-                if not AUTOKILL_ENABLED then break end
-            end
-        end
-    end
 end)
 
 for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then ApplyESP(p) end end
