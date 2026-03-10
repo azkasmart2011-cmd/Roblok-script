@@ -1,0 +1,93 @@
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+-- DATABASE KATA (Bisa kamu tambah sebanyak-banyaknya)
+local Kamus = {
+    ["a"] = {"ayam", "api", "angin", "air", "awan", "alam", "akal", "anak"},
+    ["b"] = {"buku", "bola", "batu", "babi", "baru", "baca", "bawa", "bunda"},
+    ["c"] = {"cacing", "cuka", "cinta", "cabe", "cari", "celana", "cukup"},
+    ["d"] = {"dadu", "dapur", "dasi", "dosa", "dunia", "datang", "dekat"},
+    ["e"] = {"ember", "elang", "emas", "esok", "empat", "ekor", "enak"},
+    ["f"] = {"fajar", "foto", "fakta", "fisik", "film", "fokus", "fasilitas"},
+    ["g"] = {"gajah", "gula", "gelas", "gigi", "guru", "garam", "gunung"},
+    ["h"] = {"hujan", "hari", "hati", "hantu", "hijau", "hidup", "hutan"},
+    ["i"] = {"ikan", "ibu", "isik", "istri", "indah", "ilmu", "impian"},
+    ["j"] = {"jerapah", "jamu", "jalan", "jauh", "jual", "jendela", "jujur"},
+    ["k"] = {"katak", "kaki", "kuda", "kami", "kaca", "kayu", "kursi"},
+    ["l"] = {"lampu", "lama", "lari", "langit", "lebah", "lidah", "lupa"},
+    ["m"] = {"makan", "minum", "mata", "mobil", "malam", "madu", "mimpi"},
+    ["n"] = {"nasi", "naga", "nama", "nafas", "nomor", "nyala", "nanti"},
+    ["o"] = {"obat", "orang", "otak", "otot", "olahraga", "ombak", "oleh"},
+    ["p"] = {"padi", "pintu", "pagi", "pulau", "panas", "pasir", "pintar"},
+    ["r"] = {"rusa", "roda", "rumah", "rambut", "raja", "rakyat", "rasa"},
+    ["s"] = {"sapi", "satu", "saya", "surat", "siang", "susu", "sepatu"},
+    ["t"] = {"tali", "tiga", "tangan", "tanah", "tidur", "topi", "taman"},
+    ["u"] = {"ular", "uang", "udara", "unta", "utara", "umur", "usaha"},
+    ["w"] = {"wajah", "waktu", "warna", "warga", "wadah", "wangi", "wilayah"},
+    ["y"] = {"yakin", "yatim", "yoyo", "yoga", "yudisial"},
+    ["z"] = {"zaman", "zebra", "zakat", "ziarah", "zona"}
+}
+
+-- SETUP UI
+local GUI_ID = "SAMBUNG_KATA_HELPER"
+if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = GUI_ID
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 180, 0, 100)
+Frame.Position = UDim2.new(0, 50, 0, 150)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "SAMBUNG KATA"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+
+local InputBox = Instance.new("TextBox", Frame)
+InputBox.Size = UDim2.new(0.8, 0, 0, 30)
+InputBox.Position = UDim2.new(0.1, 0, 0.4, 0)
+InputBox.PlaceholderText = "Huruf Terakhir..."
+InputBox.Text = ""
+InputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+InputBox.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", InputBox)
+
+local SendBtn = Instance.new("TextButton", Frame)
+SendBtn.Size = UDim2.new(0.8, 0, 0, 25)
+SendBtn.Position = UDim2.new(0.1, 0, 0.75, 0)
+SendBtn.Text = "CARI & KIRIM"
+SendBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+SendBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", SendBtn)
+
+-- LOGIKA KIRIM CHAT
+local function Say(msg)
+    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+        local channel = TextChatService.TextChannels.RBXGeneral
+        channel:SendAsync(msg)
+    else
+        ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(msg, "All")
+    end
+end
+
+SendBtn.MouseButton1Click:Connect(function()
+    local lastChar = InputBox.Text:lower():sub(-1) -- Ambil huruf terakhir yang kamu ketik di box
+    local daftar = Kamus[lastChar]
+    
+    if daftar then
+        local kataPilihan = daftar[math.random(1, #daftar)]
+        Say(kataPilihan)
+        InputBox.Text = "" -- Reset box
+    else
+        InputBox.Text = "Gak ada kata!"
+    end
+end)
+                                   
