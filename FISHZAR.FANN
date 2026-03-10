@@ -1,0 +1,106 @@
+-- Fishzar ULTRA OP Script
+
+-- Anti AFK
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+
+local Window = OrionLib:MakeWindow({
+	Name = "Fishzar ULTRA | Azka",
+	HidePremium = false,
+	SaveConfig = false,
+	ConfigFolder = "FishzarUltra"
+})
+
+-- TAB FARM
+local Farm = Window:MakeTab({
+	Name = "Auto Farm",
+	Icon = "rbxassetid://4483345998"
+})
+
+-- AUTO FISH
+Farm:AddToggle({
+	Name = "Auto Fish",
+	Default = false,
+	Callback = function(v)
+		_G.AutoFish = v
+		while _G.AutoFish do
+			task.wait(1)
+			pcall(function()
+				game:GetService("ReplicatedStorage").Events.Fish:FireServer()
+			end)
+		end
+	end
+})
+
+-- AUTO REEL
+Farm:AddToggle({
+	Name = "Auto Reel",
+	Default = false,
+	Callback = function(v)
+		_G.AutoReel = v
+		while _G.AutoReel do
+			task.wait(0.3)
+			pcall(function()
+				game:GetService("ReplicatedStorage").Events.Reel:FireServer()
+			end)
+		end
+	end
+})
+
+-- AUTO SELL
+Farm:AddToggle({
+	Name = "Auto Sell",
+	Default = false,
+	Callback = function(v)
+		_G.AutoSell = v
+		while _G.AutoSell do
+			task.wait(7)
+			pcall(function()
+				game:GetService("ReplicatedStorage").Events.SellAll:FireServer()
+			end)
+		end
+	end
+})
+
+-- TAB ESP
+local ESP = Window:MakeTab({
+	Name = "ESP",
+	Icon = "rbxassetid://4483345998"
+})
+
+ESP:AddButton({
+	Name = "ESP Player",
+	Callback = function()
+		for _,v in pairs(game.Players:GetPlayers()) do
+			if v ~= game.Players.LocalPlayer then
+				if v.Character then
+					local h = Instance.new("Highlight")
+					h.Parent = v.Character
+				end
+			end
+		end
+	end
+})
+
+-- TAB TELEPORT
+local TP = Window:MakeTab({
+	Name = "Teleport",
+	Icon = "rbxassetid://4483345998"
+})
+
+TP:AddButton({
+	Name = "Teleport Fishing Spot",
+	Callback = function()
+		local char = game.Players.LocalPlayer.Character
+		if char then
+			char:MoveTo(Vector3.new(120,10,-80))
+		end
+	end
+})
+
+OrionLib:Init()
