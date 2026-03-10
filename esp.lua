@@ -3,16 +3,28 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
-local GUI_ID = "FANN_PREMIUM_UI_DISTANCE" 
+local GUI_ID = "FANN_PREMIUM_UI_ULTIMATE" 
 if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = GUI_ID
 
-local MainButton = Instance.new("TextButton", ScreenGui)
-MainButton.Size = UDim2.new(0, 140, 0, 40)
-MainButton.Position = UDim2.new(0, 60, 0, 60)
-MainButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+-- [TABEL MENU BIAR RAPI]
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 160, 0, 100)
+MainFrame.Position = UDim2.new(0, 60, 0, 60)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BackgroundTransparency = 0.2
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+local UIList = Instance.new("UIListLayout", MainFrame)
+UIList.Padding = UDim.new(0, 8)
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIList.VerticalAlignment = Enum.VerticalAlignment.Center
+
+-- [TOMBOL ESP - KODE ASLI]
+local MainButton = Instance.new("TextButton", MainFrame)
+MainButton.Size = UDim2.new(0, 140, 0, 35)
+MainButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainButton.Text = "ESP: OFF"
 MainButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 MainButton.Font = Enum.Font.GothamMedium
@@ -22,35 +34,59 @@ local Stroke = Instance.new("UIStroke", MainButton)
 Stroke.Thickness = 1.8
 Stroke.Color = Color3.fromRGB(255, 50, 50) 
 
-local ESP_ENABLED = false
+-- [TOMBOL AUTO KILL - BALIK LAGI]
+local KillButton = Instance.new("TextButton", MainFrame)
+KillButton.Size = UDim2.new(0, 140, 0, 35)
+KillButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+KillButton.Text = "AUTO KILL: OFF"
+KillButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+KillButton.Font = Enum.Font.GothamMedium
+KillButton.TextSize = 14
+Instance.new("UICorner", KillButton).CornerRadius = UDim.new(0, 4)
+local KillStroke = Instance.new("UIStroke", KillButton)
+KillStroke.Thickness = 1.8
+KillStroke.Color = Color3.fromRGB(255, 50, 50)
 
--- FITUR PINTAR: Deteksi Lemari vs Tembok Biasa
+local ESP_ENABLED = false
+local AUTOKILL_ENABLED = false
+
+-- [FITUR DETEKSI LEMARI CERDAS]
 local function CheckInsideLocker(targetChar)
     local hrp = targetChar:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-    
-    -- Sensor laser ke 4 arah (Depan, Belakang, Kiri, Kanan)
-    -- Jika di sekelilingnya ada objek sangat dekat, berarti dia di dalam lemari
     local rayParams = RaycastParams.new()
     rayParams.FilterDescendantsInstances = {targetChar}
     rayParams.FilterType = Enum.RaycastFilterType.Exclude
-    
-    local directions = {
-        Vector3.new(0, 0, 2), Vector3.new(0, 0, -2), 
-        Vector3.new(2, 0, 0), Vector3.new(-2, 0, 0)
-    }
-    
+    local directions = {Vector3.new(0, 0, 2), Vector3.new(0, 0, -2), Vector3.new(2, 0, 0), Vector3.new(-2, 0, 0)}
     local hitCount = 0
     for _, dir in pairs(directions) do
         local result = workspace:Raycast(hrp.Position, dir, rayParams)
-        if result and result.Instance:IsA("BasePart") then
+        if result and result.Instance:IsA("BasePart") and result.Distance < 2.5 then
             hitCount = hitCount + 1
         end
     end
-    
-    -- Jika terdeteksi objek rapat di sekelilingnya, itu lemari
     return hitCount >= 2 
 end
+
+-- [LOGIKA AUTO KILL - SAFE MODE]
+task.spawn(function()
+    while task.wait(0.7) do
+        if AUTOKILL_ENABLED and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 then
+                        local myHrp = LocalPlayer.Character.HumanoidRootPart
+                        myHrp.AssemblyLinearVelocity = Vector3.new(0,0,0) -- Anti-cheat bypass
+                        myHrp.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                        task.wait(0.5)
+                    end
+                end
+                if not AUTOKILL_ENABLED then break end
+            end
+        end
+    end
+end)
 
 local function IsKiller(player)
     local char = player.Character
@@ -85,18 +121,14 @@ local function ApplyESP(player)
         local statusKiller = IsKiller(player)
         local statusInLocker = CheckInsideLocker(char)
         
-        -- LOGIKA WARNA:
-        -- 1. Merah (Killer)
-        -- 2. Kuning (Dalam Lemari)
-        -- 3. Biru (Normal/Dalam Rumah/Luar)
-        local color = Color3.fromRGB(0, 170, 255)
+        local color = Color3.fromRGB(0, 170, 255) -- Default Biru
         local labelText = player.Name
         
         if statusKiller then
-            color = Color3.fromRGB(255, 0, 0)
+            color = Color3.fromRGB(255, 0, 0) -- Merah
             labelText = "⚠️ KILLER ⚠️"
         elseif statusInLocker then
-            color = Color3.fromRGB(255, 255, 0)
+            color = Color3.fromRGB(255, 255, 0) -- Kuning
             labelText = "BERADA DALAM LEMARI"
         end
 
@@ -104,7 +136,7 @@ local function ApplyESP(player)
         high.Name = "FANN_High"
         high.FillColor = color
         high.FillTransparency = 0.5
-        high.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Tetap tembus pandang
+        high.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- TEMBUS PANDANG X-RAY
 
         local head = char:FindFirstChild("Head")
         if head then
@@ -134,6 +166,12 @@ MainButton.MouseButton1Click:Connect(function()
     ESP_ENABLED = not ESP_ENABLED
     MainButton.Text = ESP_ENABLED and "ESP: ON" or "ESP: OFF"
     Stroke.Color = ESP_ENABLED and Color3.fromRGB(0, 200, 255) or Color3.fromRGB(255, 50, 50)
+end)
+
+KillButton.MouseButton1Click:Connect(function()
+    AUTOKILL_ENABLED = not AUTOKILL_ENABLED
+    KillButton.Text = AUTOKILL_ENABLED and "AUTO KILL: ON" or "AUTO KILL: OFF"
+    KillStroke.Color = AUTOKILL_ENABLED and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 50, 50)
 end)
 
 for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then ApplyESP(p) end end
