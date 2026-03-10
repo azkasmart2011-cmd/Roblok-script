@@ -3,23 +3,44 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
-local GUI_ID = "FANN_PREMIUM_UI_ULTIMATE" 
+-- Reset GUI lama agar tidak tumpang tindih
+local GUI_ID = "FANN_PREMIUM_FINAL_VERSION" 
 if CoreGui:FindFirstChild(GUI_ID) then CoreGui[GUI_ID]:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = GUI_ID
 
--- [TABEL MENU BIAR RAPI]
+-- [TOMBOL BULAT F - BUKA/TUTUP MENU]
+local ToggleGui = Instance.new("TextButton", ScreenGui)
+ToggleGui.Size = UDim2.new(0, 40, 0, 40)
+ToggleGui.Position = UDim2.new(0, 15, 0, 60)
+ToggleGui.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleGui.Text = "F"
+ToggleGui.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleGui.Font = Enum.Font.GothamBold
+ToggleGui.TextSize = 18
+ToggleGui.Draggable = true
+Instance.new("UICorner", ToggleGui).CornerRadius = UDim.new(1, 0)
+
+-- [TABEL MENU UTAMA]
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 160, 0, 100)
-MainFrame.Position = UDim2.new(0, 60, 0, 60)
+MainFrame.Position = UDim2.new(0, 65, 0, 60)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BackgroundTransparency = 0.2
+MainFrame.Visible = true 
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+
 local UIList = Instance.new("UIListLayout", MainFrame)
 UIList.Padding = UDim.new(0, 8)
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIList.VerticalAlignment = Enum.VerticalAlignment.Center
+
+-- [LOGIKA BUKA/TUTUP TABEL]
+ToggleGui.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+    ToggleGui.Text = MainFrame.Visible and "X" or "F"
+end)
 
 -- [TOMBOL ESP - KODE ASLI]
 local MainButton = Instance.new("TextButton", MainFrame)
@@ -28,20 +49,20 @@ MainButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainButton.Text = "ESP: OFF"
 MainButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 MainButton.Font = Enum.Font.GothamMedium
-MainButton.TextSize = 14
+MainButton.TextSize = 13
 Instance.new("UICorner", MainButton).CornerRadius = UDim.new(0, 4)
 local Stroke = Instance.new("UIStroke", MainButton)
 Stroke.Thickness = 1.8
 Stroke.Color = Color3.fromRGB(255, 50, 50) 
 
--- [TOMBOL AUTO KILL - BALIK LAGI]
+-- [TOMBOL AUTO KILL]
 local KillButton = Instance.new("TextButton", MainFrame)
 KillButton.Size = UDim2.new(0, 140, 0, 35)
 KillButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 KillButton.Text = "AUTO KILL: OFF"
 KillButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 KillButton.Font = Enum.Font.GothamMedium
-KillButton.TextSize = 14
+KillButton.TextSize = 13
 Instance.new("UICorner", KillButton).CornerRadius = UDim.new(0, 4)
 local KillStroke = Instance.new("UIStroke", KillButton)
 KillStroke.Thickness = 1.8
@@ -50,25 +71,23 @@ KillStroke.Color = Color3.fromRGB(255, 50, 50)
 local ESP_ENABLED = false
 local AUTOKILL_ENABLED = false
 
--- [FITUR DETEKSI LEMARI CERDAS]
+-- [FITUR DETEKSI LEMARI]
 local function CheckInsideLocker(targetChar)
     local hrp = targetChar:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     local rayParams = RaycastParams.new()
     rayParams.FilterDescendantsInstances = {targetChar}
     rayParams.FilterType = Enum.RaycastFilterType.Exclude
-    local directions = {Vector3.new(0, 0, 2), Vector3.new(0, 0, -2), Vector3.new(2, 0, 0), Vector3.new(-2, 0, 0)}
-    local hitCount = 0
-    for _, dir in pairs(directions) do
-        local result = workspace:Raycast(hrp.Position, dir, rayParams)
-        if result and result.Instance:IsA("BasePart") and result.Distance < 2.5 then
-            hitCount = hitCount + 1
-        end
+    local dirs = {Vector3.new(0, 0, 2), Vector3.new(0, 0, -2), Vector3.new(2, 0, 0), Vector3.new(-2, 0, 0)}
+    local hits = 0
+    for _, dir in pairs(dirs) do
+        local res = workspace:Raycast(hrp.Position, dir, rayParams)
+        if res and res.Instance:IsA("BasePart") and res.Distance < 2.5 then hits = hits + 1 end
     end
-    return hitCount >= 2 
+    return hits >= 2 
 end
 
--- [LOGIKA AUTO KILL - SAFE MODE]
+-- [LOGIKA AUTO KILL - SAFE TELEPORT]
 task.spawn(function()
     while task.wait(0.7) do
         if AUTOKILL_ENABLED and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -77,7 +96,7 @@ task.spawn(function()
                     local hum = p.Character:FindFirstChildOfClass("Humanoid")
                     if hum and hum.Health > 0 then
                         local myHrp = LocalPlayer.Character.HumanoidRootPart
-                        myHrp.AssemblyLinearVelocity = Vector3.new(0,0,0) -- Anti-cheat bypass
+                        myHrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
                         myHrp.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
                         task.wait(0.5)
                     end
@@ -88,6 +107,7 @@ task.spawn(function()
     end
 end)
 
+-- [DETEKSI KILLER - KODE ASLI]
 local function IsKiller(player)
     local char = player.Character
     if not char then return false end
@@ -107,6 +127,7 @@ local function IsKiller(player)
     return false
 end
 
+-- [APPLY ESP - KODE ASLI DENGAN FIX TEMBUS & LEMARI]
 local function ApplyESP(player)
     RunService.RenderStepped:Connect(function()
         local char = player.Character
@@ -121,11 +142,11 @@ local function ApplyESP(player)
         local statusKiller = IsKiller(player)
         local statusInLocker = CheckInsideLocker(char)
         
-        local color = Color3.fromRGB(0, 170, 255) -- Default Biru
+        local color = Color3.fromRGB(0, 170, 255) 
         local labelText = player.Name
         
         if statusKiller then
-            color = Color3.fromRGB(255, 0, 0) -- Merah
+            color = Color3.fromRGB(255, 0, 0)
             labelText = "⚠️ KILLER ⚠️"
         elseif statusInLocker then
             color = Color3.fromRGB(255, 255, 0) -- Kuning
@@ -136,7 +157,7 @@ local function ApplyESP(player)
         high.Name = "FANN_High"
         high.FillColor = color
         high.FillTransparency = 0.5
-        high.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- TEMBUS PANDANG X-RAY
+        high.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- FIX TEMBUS PANDANG
 
         local head = char:FindFirstChild("Head")
         if head then
