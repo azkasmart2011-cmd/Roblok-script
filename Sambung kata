@@ -1,45 +1,81 @@
--- [ KAMUS MINI - Nanti bisa ditambah sampai ribuan ]
-local Kamus = {"SAYA", "SABUN", "MAKAN", "MANTAN", "ANAK", "ANTRI", "BAKAT", "BARU"}
+-- [[ DAFTAR KAMUS LENGKAP - BISA DITAMBAH SENDIRI ]]
+local Kamus = {
+    "SAYA", "SABUN", "SAKIT", "SALAM", "SAMPAH", "SANTAN", "SAPU", "SAYUR", "SALJU", "SAPI",
+    "MAKAN", "MINUM", "MASAK", "MANTAN", "MANDI", "MATA", "MALAM", "MOBIL", "MADU", "MATAHARI",
+    "ANAK", "AYAM", "API", "AWAN", "ALAT", "ALAS", "ADIL", "ANGIN", "AIR", "ARENA",
+    "BACA", "Buku", "BOLA", "BISA", "BANTU", "BARU", "BAJU", "BATU", "BUMI", "BUNGA",
+    "Cacing", "Cepat", "Cari", "Cuka", "Cinta", "Cermin", "Cangkir", "Cita", "Coba", "Curi",
+    "Dadu", "Darah", "Dapur", "Dewa", "Desa", "Duri", "Dulu", "Dasi", "Dunia", "Daging",
+    "Gajah", "Garam", "Gula", "Gelas", "Gitar", "Guna", "Gaya", "Gigi", "Guru", "Gunung",
+    "Hati", "Hari", "Hujan", "Hijau", "Hutan", "Hantu", "Harta", "Hapus", "Hadir", "Hakim",
+    "Ikan", "Ibu", "Istri", "Ilmu", "Izin", "Iri", "Ikat", "Ikut", "Isi", "Istana",
+    "Jalan", "Jari", "Jam", "Jual", "Janji", "Jauh", "Jatuh", "Jinak", "Jendela", "Jawab",
+    "Kaki", "Kuda", "Kopi", "Kota", "Kayu", "Kaca", "Kabar", "Kapas", "Kamus", "Kertas",
+    "Lari", "Lampu", "Lama", "Lidah", "Lupa", "Luka", "Lagu", "Laut", "Langit", "Lantai",
+    "Nasi", "Nama", "Naga", "Naik", "Napas", "Niat", "Nilai", "Nomor", "Nonton", "Nyanyi",
+    "Padi", "Pasar", "Pintu", "Pagi", "Panas", "Pasir", "Paku", "Pita", "Pohon", "Pulau",
+    "Raja", "Ratu", "Roda", "Roti", "Rambut", "Rasa", "Rumah", "Rugi", "Rantai", "Rakyat",
+    "Tangan", "Tidur", "Taman", "Tali", "Tahu", "Telor", "Tikus", "Tamu", "Tunggu", "Tanah",
+    "Ular", "Uang", "Ujung", "Utara", "Ujian", "Ukur", "Ulang", "Urat", "Urus", "Usaha"
+}
 
--- [ FUNGSI SEARCHING ]
+-- [[ FUNGSI CARI KATA ]]
 local function CariJawaban(huruf)
     local Hasil = {}
     for _, kata in pairs(Kamus) do
-        if string.find(kata, huruf:upper()) then -- Deteksi huruf di posisi mana aja
+        if string.sub(kata:upper(), 1, #huruf) == huruf:upper() then
             table.insert(Hasil, kata)
         end
     end
     return Hasil
 end
 
--- [ AREA UPDATE KE TABEL KOSONG ]
--- Kita bikin fungsi yang bakal refresh isi tabel kamu
-local function RefreshDaftarKata(hurufDiGame)
-    -- Anggap aja 'ScrollingFrame' itu area kosong di UI kamu
-    ScrollingFrame:ClearAllChildren() -- Hapus list lama
+-- [[ INTEGRASI KE TABEL KOSONG UI ]]
+local function BuildUI()
+    -- Mencari Frame "Content" di UI Utama kamu
+    local MainUI = game:GetService("CoreGui"):FindFirstChild("FannHub_V19_Final")
+    if not MainUI then return end
     
-    local Jawabans = CariJawaban(hurufDiGame)
-    for i, kata in pairs(Jawabans) do
-        local btn = Instance.new("TextButton", ScrollingFrame)
-        btn.Size = UDim2.new(1, 0, 0, 30)
-        btn.Text = kata
-        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        -- Kalau diklik, langsung otomatis ngetik!
-        btn.MouseButton1Click:Connect(function()
-            print("Mengirim jawaban: " .. kata)
-            -- game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(kata, "All")
-        end)
+    local Content = MainUI.MainFrame.Content
+    
+    -- Buat Area Scroll di bagian bawah (Tabel Kosong)
+    local Scroll = Content:FindFirstChild("WordScroll") or Instance.new("ScrollingFrame", Content)
+    Scroll.Name = "WordScroll"
+    Scroll.Size = UDim2.new(1, -10, 1, -130)
+    Scroll.Position = UDim2.new(0, 5, 0, 125)
+    Scroll.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Scroll.BorderSizePixel = 0
+    Scroll.CanvasSize = UDim2.new(0, 0, 10, 0)
+    
+    local Layout = Scroll:FindFirstChild("UIListLayout") or Instance.new("UIListLayout", Scroll)
+    Layout.Padding = UDim.new(0, 5)
+    
+    -- Fungsi Refresh Isi Tabel
+    _G.UpdateWords = function(huruf)
+        for _, child in pairs(Scroll:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        
+        local Jawabans = CariJawaban(huruf)
+        for _, kata in pairs(Jawabans) do
+            local btn = Instance.new("TextButton", Scroll)
+            btn.Size = UDim2.new(1, -10, 0, 30)
+            btn.Text = kata
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Font = Enum.Font.SourceSansBold
+            
+            -- KLIK UNTUK KIRIM KE CHAT
+            btn.MouseButton1Click:Connect(function()
+                local args = {[1] = kata, [2] = "All"}
+                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+            end)
+        end
     end
 end
 
--- [ AUTO SCANNER (INI YANG BIKIN PINTAR) ]
--- Dia bakal pantau teks yang ganti-ganti di game
-spawn(function()
-    while wait(0.5) do
-        -- Ganti path di bawah sesuai letak teks huruf di game Bombline itu
-        local TeksLayar = game.Players.LocalPlayer.PlayerGui.MainGui.HurufLabel.Text 
-        if TeksLayar ~= "" then
-            RefreshDaftarKata(TeksLayar)
-        end
-    end
-end)
+-- Jalankan UI Builder
+BuildUI()
+
+-- Contoh penggunaan: Panggil _G.UpdateWords("SA") maka tabel akan terisi
+-- Kamu bisa tambahin looping deteksi GUI game biar otomatis terpanggil
