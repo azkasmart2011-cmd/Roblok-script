@@ -1,1 +1,45 @@
+-- [ KAMUS MINI - Nanti bisa ditambah sampai ribuan ]
+local Kamus = {"SAYA", "SABUN", "MAKAN", "MANTAN", "ANAK", "ANTRI", "BAKAT", "BARU"}
 
+-- [ FUNGSI SEARCHING ]
+local function CariJawaban(huruf)
+    local Hasil = {}
+    for _, kata in pairs(Kamus) do
+        if string.find(kata, huruf:upper()) then -- Deteksi huruf di posisi mana aja
+            table.insert(Hasil, kata)
+        end
+    end
+    return Hasil
+end
+
+-- [ AREA UPDATE KE TABEL KOSONG ]
+-- Kita bikin fungsi yang bakal refresh isi tabel kamu
+local function RefreshDaftarKata(hurufDiGame)
+    -- Anggap aja 'ScrollingFrame' itu area kosong di UI kamu
+    ScrollingFrame:ClearAllChildren() -- Hapus list lama
+    
+    local Jawabans = CariJawaban(hurufDiGame)
+    for i, kata in pairs(Jawabans) do
+        local btn = Instance.new("TextButton", ScrollingFrame)
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.Text = kata
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        -- Kalau diklik, langsung otomatis ngetik!
+        btn.MouseButton1Click:Connect(function()
+            print("Mengirim jawaban: " .. kata)
+            -- game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(kata, "All")
+        end)
+    end
+end
+
+-- [ AUTO SCANNER (INI YANG BIKIN PINTAR) ]
+-- Dia bakal pantau teks yang ganti-ganti di game
+spawn(function()
+    while wait(0.5) do
+        -- Ganti path di bawah sesuai letak teks huruf di game Bombline itu
+        local TeksLayar = game.Players.LocalPlayer.PlayerGui.MainGui.HurufLabel.Text 
+        if TeksLayar ~= "" then
+            RefreshDaftarKata(TeksLayar)
+        end
+    end
+end)
