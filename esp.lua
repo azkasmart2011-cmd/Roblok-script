@@ -9,23 +9,44 @@ local FannHub = {
     Visible = true
 }
 
--- [ FUNGSI ESP TEMBUS LEMARI (ASLI KEMARIN) ]
+-- [ FUNGSI ESP LENGKAP: HIGHLIGHT + NAMA + JARAK ]
 local function ApplyESP(v)
-    if v ~= Players.LocalPlayer and v.Character then
-        -- Logika deteksi Highlight (Tetap nempel meski di dalam lemari/objek)
+    if v ~= Players.LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+        -- 1. Highlight (Tembus Lemari/Objek)
         local h = v.Character:FindFirstChild("FannHighlight") or Instance.new("Highlight")
         h.Name = "FannHighlight"
         h.Parent = v.Character
         h.FillTransparency = 0.5
         h.OutlineTransparency = 0
-        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- INI KUNCINYA (TEMBUS LEMARI)
-
+        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        
         -- Warna Merah (Killer), Biru (Biasa)
         if v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Weapon") then
             h.FillColor = Color3.fromRGB(255, 0, 0)
         else
-            h.FillColor = Color3.fromRGB(0, 0, 255)
+            h.FillColor = Color3.fromRGB(0, 150, 255)
         end
+
+        -- 2. Nama & Jarak (BillboardGui)
+        local bbg = v.Character:FindFirstChild("FannTag") or Instance.new("BillboardGui")
+        bbg.Name = "FannTag"
+        bbg.Parent = v.Character
+        bbg.Adornee = v.Character:FindFirstChild("Head")
+        bbg.Size = UDim2.new(0, 100, 0, 50)
+        bbg.StudsOffset = Vector3.new(0, 3, 0)
+        bbg.AlwaysOnTop = true
+
+        local tl = bbg:FindFirstChild("TextLabel") or Instance.new("TextLabel", bbg)
+        tl.BackgroundTransparency = 1
+        tl.Size = UDim2.new(1, 0, 1, 0)
+        tl.Font = Enum.Font.SourceSansBold
+        tl.TextSize = 14
+        tl.TextColor3 = h.FillColor
+        tl.TextStrokeTransparency = 0
+
+        -- Update Jarak
+        local dist = math.floor((Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude)
+        tl.Text = v.Name .. "\n[" .. dist .. "m]"
     end
 end
 
@@ -47,19 +68,21 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- [ UI CONSTRUCTION - SISTEM TAB ]
+-- [ UI CONSTRUCTION ]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "FannHub_V19_CabinetCheck"
+ScreenGui.Name = "FannHub_V19_Final"
 
--- Tombol Open/Close
+-- TOMBOL "F" (GANTI DARI MENU)
 local Toggle = Instance.new("TextButton", ScreenGui)
-Toggle.Size = UDim2.new(0, 60, 0, 35)
+Toggle.Size = UDim2.new(0, 45, 0, 45)
 Toggle.Position = UDim2.new(0, 10, 0.4, 0)
-Toggle.Text = "MENU"
+Toggle.Text = "F"
 Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 Toggle.TextColor3 = Color3.new(1, 1, 1)
 Toggle.Font = Enum.Font.SourceSansBold
-Instance.new("UICorner", Toggle)
+Toggle.TextSize = 25
+local Corner = Instance.new("UICorner", Toggle)
+Corner.CornerRadius = UDim.new(0, 10)
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 450, 0, 280)
@@ -107,7 +130,7 @@ Instance.new("UICorner", KillBtn)
 local ESPBtn = Instance.new("TextButton", Content)
 ESPBtn.Size = UDim2.new(1, 0, 0, 50)
 ESPBtn.Position = UDim2.new(0, 0, 0, 60)
-ESPBtn.Text = "ESP (CABINET CHECK): OFF"
+ESPBtn.Text = "ESP (FULL INFO): OFF"
 ESPBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 ESPBtn.TextColor3 = Color3.new(1, 1, 1)
 ESPBtn.Font = Enum.Font.SourceSansBold
@@ -131,8 +154,9 @@ ESPBtn.MouseButton1Click:Connect(function()
     ESPBtn.BackgroundColor3 = FannHub.ESP and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(45, 45, 45)
     if not FannHub.ESP then
         for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("FannHighlight") then
-                v.Character.FannHighlight:Destroy()
+            if v.Character then
+                if v.Character:FindFirstChild("FannHighlight") then v.Character.FannHighlight:Destroy() end
+                if v.Character:FindFirstChild("FannTag") then v.Character.FannTag:Destroy() end
             end
         end
     end
