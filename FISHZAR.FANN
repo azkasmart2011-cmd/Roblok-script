@@ -1,78 +1,45 @@
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local VirtualInputManager = game:GetService("VirtualInputManager")
+-- [ KAMUS MINI - Nanti bisa ditambah sampai ribuan ]
+local Kamus = {"SAYA", "SABUN", "MAKAN", "MANTAN", "ANAK", "ANTRI", "BAKAT", "BARU"}
 
--- UI SETUP (STYLE PREMIUM)
-local CoreGui = game:GetService("CoreGui")
-if CoreGui:FindFirstChild("FannFishV6") then CoreGui.FannFishV6:Destroy() end
+-- [ FUNGSI SEARCHING ]
+local function CariJawaban(huruf)
+    local Hasil = {}
+    for _, kata in pairs(Kamus) do
+        if string.find(kata, huruf:upper()) then -- Deteksi huruf di posisi mana aja
+            table.insert(Hasil, kata)
+        end
+    end
+    return Hasil
+end
 
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "FannFishV6"
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 220, 0, 150)
-Main.Position = UDim2.new(0.5, -110, 0.4, 0)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-Main.Active = true
-Main.Draggable = true
-Instance.new("UICorner", Main)
+-- [ AREA UPDATE KE TABEL KOSONG ]
+-- Kita bikin fungsi yang bakal refresh isi tabel kamu
+local function RefreshDaftarKata(hurufDiGame)
+    -- Anggap aja 'ScrollingFrame' itu area kosong di UI kamu
+    ScrollingFrame:ClearAllChildren() -- Hapus list lama
+    
+    local Jawabans = CariJawaban(hurufDiGame)
+    for i, kata in pairs(Jawabans) do
+        local btn = Instance.new("TextButton", ScrollingFrame)
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.Text = kata
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        -- Kalau diklik, langsung otomatis ngetik!
+        btn.MouseButton1Click:Connect(function()
+            print("Mengirim jawaban: " .. kata)
+            -- game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(kata, "All")
+        end)
+    end
+end
 
-local T = Instance.new("TextLabel", Main)
-T.Size = UDim2.new(1, 0, 0, 40)
-T.Text = "FISH IT! ULTRA OP"
-T.TextColor3 = Color3.fromRGB(0, 255, 150)
-T.Font = Enum.Font.GothamBold
-T.BackgroundTransparency = 1
-
-local Status = Instance.new("TextLabel", Main)
-Status.Size = UDim2.new(1, 0, 0, 30)
-Status.Position = UDim2.new(0, 0, 0.3, 0)
-Status.Text = "Status: Menunggu..."
-Status.TextColor3 = Color3.new(1, 1, 1)
-Status.BackgroundTransparency = 1
-
-local Btn = Instance.new("TextButton", Main)
-Btn.Size = UDim2.new(0.8, 0, 0, 40)
-Btn.Position = UDim2.new(0.1, 0, 0.6, 0)
-Btn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-Btn.Text = "START AUTO-FARM"
-Btn.TextColor3 = Color3.new(1, 1, 1)
-Btn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", Btn)
-
--- LOGIKA FISH IT (AUTO FARM)
-local running = false
-Btn.MouseButton1Click:Connect(function()
-    running = not running
-    Btn.Text = running and "STOP AUTO-FARM" or "START AUTO-FARM"
-    Btn.BackgroundColor3 = running and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(0, 150, 255)
-end)
-
-task.spawn(function()
-    while task.wait(0.1) do
-        if running then
-            local char = LocalPlayer.Character
-            local tool = char:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-            
-            if tool then
-                -- 1. Pastikan pancingan dipegang
-                if tool.Parent ~= char then
-                    tool.Parent = char
-                end
-                
-                -- 2. AUTO CAST & HOOK (Klik secepat kilat)
-                -- Mencari sinyal ikan (biasanya ada notif atau suara)
-                Status.Text = "Status: Mancing Otomatis..."
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                task.wait(0.05)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                
-                -- 3. AUTO SOLVE MINIGAME
-                -- Game Fish It biasanya ada bar yang harus ditekan. 
-                -- Script ini bakal spam klik biar bar-nya selalu di posisi menang.
-                task.wait(0.5) 
-            else
-                Status.Text = "Status: Mana Pancingannya?"
-            end
+-- [ AUTO SCANNER (INI YANG BIKIN PINTAR) ]
+-- Dia bakal pantau teks yang ganti-ganti di game
+spawn(function()
+    while wait(0.5) do
+        -- Ganti path di bawah sesuai letak teks huruf di game Bombline itu
+        local TeksLayar = game.Players.LocalPlayer.PlayerGui.MainGui.HurufLabel.Text 
+        if TeksLayar ~= "" then
+            RefreshDaftarKata(TeksLayar)
         end
     end
 end)
