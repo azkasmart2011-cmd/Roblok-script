@@ -1,81 +1,182 @@
--- [[ DAFTAR KAMUS LENGKAP - BISA DITAMBAH SENDIRI ]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+-- [ 1. DATABASE & KAMUS ]
+local FannHub = { AutoKill = false, ESP = false, Visible = true }
 local Kamus = {
-    "SAYA", "SABUN", "SAKIT", "SALAM", "SAMPAH", "SANTAN", "SAPU", "SAYUR", "SALJU", "SAPI",
-    "MAKAN", "MINUM", "MASAK", "MANTAN", "MANDI", "MATA", "MALAM", "MOBIL", "MADU", "MATAHARI",
-    "ANAK", "AYAM", "API", "AWAN", "ALAT", "ALAS", "ADIL", "ANGIN", "AIR", "ARENA",
-    "BACA", "Buku", "BOLA", "BISA", "BANTU", "BARU", "BAJU", "BATU", "BUMI", "BUNGA",
-    "Cacing", "Cepat", "Cari", "Cuka", "Cinta", "Cermin", "Cangkir", "Cita", "Coba", "Curi",
-    "Dadu", "Darah", "Dapur", "Dewa", "Desa", "Duri", "Dulu", "Dasi", "Dunia", "Daging",
-    "Gajah", "Garam", "Gula", "Gelas", "Gitar", "Guna", "Gaya", "Gigi", "Guru", "Gunung",
-    "Hati", "Hari", "Hujan", "Hijau", "Hutan", "Hantu", "Harta", "Hapus", "Hadir", "Hakim",
-    "Ikan", "Ibu", "Istri", "Ilmu", "Izin", "Iri", "Ikat", "Ikut", "Isi", "Istana",
-    "Jalan", "Jari", "Jam", "Jual", "Janji", "Jauh", "Jatuh", "Jinak", "Jendela", "Jawab",
-    "Kaki", "Kuda", "Kopi", "Kota", "Kayu", "Kaca", "Kabar", "Kapas", "Kamus", "Kertas",
-    "Lari", "Lampu", "Lama", "Lidah", "Lupa", "Luka", "Lagu", "Laut", "Langit", "Lantai",
-    "Nasi", "Nama", "Naga", "Naik", "Napas", "Niat", "Nilai", "Nomor", "Nonton", "Nyanyi",
-    "Padi", "Pasar", "Pintu", "Pagi", "Panas", "Pasir", "Paku", "Pita", "Pohon", "Pulau",
-    "Raja", "Ratu", "Roda", "Roti", "Rambut", "Rasa", "Rumah", "Rugi", "Rantai", "Rakyat",
-    "Tangan", "Tidur", "Taman", "Tali", "Tahu", "Telor", "Tikus", "Tamu", "Tunggu", "Tanah",
-    "Ular", "Uang", "Ujung", "Utara", "Ujian", "Ukur", "Ulang", "Urat", "Urus", "Usaha"
+    "SAYA", "SABUN", "SAKIT", "SALAM", "SAMPAH", "SANTAN", "SAPU", "SAYUR",
+    "MAKAN", "MINUM", "MASAK", "MANTAN", "MANDI", "MATA", "MALAM",
+    "ANAK", "AYAM", "API", "AWAN", "ALAT", "ALAS", "ADIL", "ANGIN",
+    "BACA", "BOLA", "BISA", "BANTU", "BARU", "BAJU", "BATU", "BUMI",
+    "JALAN", "JARI", "JAM", "JUAL", "JANJI", "JAUH", "JATUH",
+    -- (Bisa kamu tambah lagi sendiri di sini)
 }
 
--- [[ FUNGSI CARI KATA ]]
-local function CariJawaban(huruf)
-    local Hasil = {}
-    for _, kata in pairs(Kamus) do
-        if string.sub(kata:upper(), 1, #huruf) == huruf:upper() then
-            table.insert(Hasil, kata)
+-- [ 2. FUNGSI ESP ASLI (TEMBUS LEMARI) ]
+local function ApplyESP(v)
+    if v ~= Players.LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+        local h = v.Character:FindFirstChild("FannHighlight") or Instance.new("Highlight", v.Character)
+        h.Name = "FannHighlight"
+        h.FillTransparency = 0.5
+        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        
+        if v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife") then
+            h.FillColor = Color3.fromRGB(255, 0, 0) -- Killer Merah
+        else
+            h.FillColor = Color3.fromRGB(0, 150, 255) -- Biasa Biru
         end
+
+        local bbg = v.Character:FindFirstChild("FannTag") or Instance.new("BillboardGui", v.Character)
+        bbg.Name = "FannTag"
+        bbg.Adornee = v.Character:FindFirstChild("Head")
+        bbg.Size = UDim2.new(0, 100, 0, 50)
+        bbg.StudsOffset = Vector3.new(0, 3, 0)
+        bbg.AlwaysOnTop = true
+
+        local tl = bbg:FindFirstChild("TextLabel") or Instance.new("TextLabel", bbg)
+        tl.BackgroundTransparency = 1
+        tl.Size = UDim2.new(1, 0, 1, 0)
+        tl.Font = Enum.Font.SourceSansBold
+        tl.TextSize = 14
+        tl.TextColor3 = h.FillColor
+        tl.TextStrokeTransparency = 0
+        
+        local dist = math.floor((Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude)
+        tl.Text = v.Name .. " [" .. dist .. "m]"
     end
-    return Hasil
 end
 
--- [[ INTEGRASI KE TABEL KOSONG UI ]]
-local function BuildUI()
-    -- Mencari Frame "Content" di UI Utama kamu
-    local MainUI = game:GetService("CoreGui"):FindFirstChild("FannHub_V19_Final")
-    if not MainUI then return end
-    
-    local Content = MainUI.MainFrame.Content
-    
-    -- Buat Area Scroll di bagian bawah (Tabel Kosong)
-    local Scroll = Content:FindFirstChild("WordScroll") or Instance.new("ScrollingFrame", Content)
-    Scroll.Name = "WordScroll"
-    Scroll.Size = UDim2.new(1, -10, 1, -130)
-    Scroll.Position = UDim2.new(0, 5, 0, 125)
-    Scroll.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    Scroll.BorderSizePixel = 0
-    Scroll.CanvasSize = UDim2.new(0, 0, 10, 0)
-    
-    local Layout = Scroll:FindFirstChild("UIListLayout") or Instance.new("UIListLayout", Scroll)
-    Layout.Padding = UDim.new(0, 5)
-    
-    -- Fungsi Refresh Isi Tabel
-    _G.UpdateWords = function(huruf)
-        for _, child in pairs(Scroll:GetChildren()) do
-            if child:IsA("TextButton") then child:Destroy() end
-        end
-        
-        local Jawabans = CariJawaban(huruf)
-        for _, kata in pairs(Jawabans) do
-            local btn = Instance.new("TextButton", Scroll)
-            btn.Size = UDim2.new(1, -10, 0, 30)
-            btn.Text = kata
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.Font = Enum.Font.SourceSansBold
-            
-            -- KLIK UNTUK KIRIM KE CHAT
-            btn.MouseButton1Click:Connect(function()
-                local args = {[1] = kata, [2] = "All"}
-                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(unpack(args))
+-- [ 3. UI UTAMA ]
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "FannHub_Ultimate"
+
+-- Tombol F (Buka/Tutup)
+local Toggle = Instance.new("TextButton", ScreenGui)
+Toggle.Size = UDim2.new(0, 45, 0, 45)
+Toggle.Position = UDim2.new(0, 10, 0.4, 0)
+Toggle.Text = "F"
+Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.Font = Enum.Font.SourceSansBold
+Toggle.TextSize = 25
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 10)
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 450, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+
+-- Sidebar (Area Kiri yang tadinya kosong)
+local Sidebar = Instance.new("Frame", MainFrame)
+Sidebar.Size = UDim2.new(0, 130, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+local Title = Instance.new("TextLabel", Sidebar)
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Text = "FANN HUB"
+Title.TextColor3 = Color3.fromRGB(255, 0, 0)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
+Title.BackgroundTransparency = 1
+
+local TabBtn = Instance.new("TextButton", Sidebar)
+TabBtn.Size = UDim2.new(1, -10, 0, 40)
+TabBtn.Position = UDim2.new(0, 5, 0, 60)
+TabBtn.Text = "MAIN MENU"
+TabBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+TabBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", TabBtn)
+
+-- Content Area (Kanan)
+local Content = Instance.new("Frame", MainFrame)
+Content.Size = UDim2.new(1, -145, 1, -20)
+Content.Position = UDim2.new(0, 140, 0, 10)
+Content.BackgroundTransparency = 1
+
+-- Tombol Auto Kill
+local KillBtn = Instance.new("TextButton", Content)
+KillBtn.Size = UDim2.new(1, 0, 0, 45)
+KillBtn.Text = "AUTO KILL: OFF"
+KillBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+KillBtn.TextColor3 = Color3.new(1, 1, 1)
+KillBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", KillBtn)
+
+-- Tombol ESP
+local ESPBtn = Instance.new("TextButton", Content)
+ESPBtn.Size = UDim2.new(1, 0, 0, 45)
+ESPBtn.Position = UDim2.new(0, 0, 0, 55)
+ESPBtn.Text = "ACTIVATE ESP: OFF"
+ESPBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+ESPBtn.TextColor3 = Color3.new(1, 1, 1)
+ESPBtn.Font = Enum.Font.SourceSansBold
+Instance.new("UICorner", ESPBtn)
+
+-- [ TABEL KATA (AREA KOSONG DI BAWAH) ]
+local Scroll = Instance.new("ScrollingFrame", Content)
+Scroll.Size = UDim2.new(1, 0, 1, -115)
+Scroll.Position = UDim2.new(0, 0, 0, 110)
+Scroll.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Scroll.BorderSizePixel = 0
+Scroll.CanvasSize = UDim2.new(0, 0, 5, 0)
+local Layout = Instance.new("UIListLayout", Scroll)
+Layout.Padding = UDim.new(0, 5)
+
+-- [ FUNGSI SEARCH KATA ]
+local function UpdateWords(huruf)
+    for _, child in pairs(Scroll:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    for _, kata in pairs(Kamus) do
+        if string.sub(kata:upper(), 1, #huruf) == huruf:upper() then
+            local b = Instance.new("TextButton", Scroll)
+            b.Size = UDim2.new(1, -10, 0, 30)
+            b.Text = kata
+            b.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            b.TextColor3 = Color3.new(1, 1, 1)
+            b.Font = Enum.Font.SourceSansBold
+            b.MouseButton1Click:Connect(function()
+                game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(kata, "All")
             end)
         end
     end
 end
 
--- Jalankan UI Builder
-BuildUI()
+-- [ LOOPING AKTIF ]
+RunService.RenderStepped:Connect(function()
+    if FannHub.AutoKill then
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= Players.LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                if v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+                    Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+                    break
+                end
+            end
+        end
+    end
+    if FannHub.ESP then
+        for _, v in pairs(Players:GetPlayers()) do ApplyESP(v) end
+    end
+end)
 
--- Contoh penggunaan: Panggil _G.UpdateWords("SA") maka tabel akan terisi
--- Kamu bisa tambahin looping deteksi GUI game biar otomatis terpanggil
+-- Toggle Menu Click
+Toggle.MouseButton1Click:Connect(function()
+    FannHub.Visible = not FannHub.Visible
+    MainFrame.Visible = FannHub.Visible
+end)
+
+-- Contoh: Panggil UpdateWords("SA") biar tabel isi
+UpdateWords("SA") 
+
+-- Button Toggle Logic
+KillBtn.MouseButton1Click:Connect(function()
+    FannHub.AutoKill = not FannHub.AutoKill
+    KillBtn.Text = "AUTO KILL: " .. (FannHub.AutoKill and "ON" or "OFF")
+    KillBtn.BackgroundColor3 = FannHub.AutoKill and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(45, 45, 45)
+end)
+
+ESPBtn.MouseButton1Click:Connect(function()
+    FannHub.ESP = not FannHub.ESP
+    ESPBtn.Text = "ACTIVATE ESP: " .. (FannHub.ESP and "ON" or "OFF")
+    ESPBtn.BackgroundColor3 = FannHub.ESP and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(45, 45, 45)
+end)
