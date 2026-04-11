@@ -1,4 +1,4 @@
--- Script Detector Bomb Chip dengan Tombol On/Off
+-- Script Bomb Chip Detector (Enhanced Auto-Scan)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -7,13 +7,13 @@ local BOMB_ESP_Enabled = false
 
 -- 1. Membuat UI Tombol
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BombChipTracker"
+screenGui.Name = "FannBombTracker"
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(0, 130, 0, 40)
-toggleBtn.Position = UDim2.new(0, 20, 0.5, 50) -- Di bawah tombol ESP Killer sebelumnya
+toggleBtn.Position = UDim2.new(0, 20, 0.5, 50)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 toggleBtn.Text = "BOMB SCAN: OFF"
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -25,38 +25,43 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = toggleBtn
 
--- 2. Fungsi Scan Bom
--- Kamu mungkin perlu menyesuaikan "Chips" dengan nama folder chip di gamenya
-local function scanChips()
-    local targetFolder = workspace:FindFirstChild("Chips") or workspace:FindFirstChild("Grid") or workspace:FindFirstChild("Game")
-    
-    if not targetFolder then return end
+-- 2. Fungsi Scan Bom yang lebih teliti
+local function scanForBombs()
+    -- Mencari folder yang umum digunakan untuk menyimpan Chip
+    local possibleFolders = {
+        workspace:FindFirstChild("Chips"),
+        workspace:FindFirstChild("Grid"),
+        workspace:FindFirstChild("Cells"),
+        workspace:FindFirstChild("Game"),
+        workspace:FindFirstChild("Map")
+    }
 
-    for _, chip in pairs(targetFolder:GetDescendants()) do
-        -- Cek apakah objek ini adalah chip (biasanya Part atau Model)
-        if chip:IsA("BasePart") or chip:IsA("Model") then
-            
-            -- Logika deteksi bom (berdasarkan Value atau Attribute)
-            local isBomb = chip:FindFirstChild("IsBomb") or chip:FindFirstChild("Bomb") or chip:GetAttribute("IsBomb")
-            
-            if isBomb then
-                local highlight = chip:FindFirstChild("BombHighlight")
-                
-                if BOMB_ESP_Enabled then
-                    -- Jika Belum ada Highlight, buat baru
-                    if not highlight then
-                        highlight = Instance.new("Highlight")
-                        highlight.Name = "BombHighlight"
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Merah
-                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                        highlight.FillTransparency = 0.5
-                        highlight.Parent = chip
-                    end
-                    highlight.Enabled = true
-                else
-                    -- Jika dimatikan
-                    if highlight then
-                        highlight.Enabled = false
+    for _, folder in pairs(possibleFolders) do
+        if folder then
+            for _, chip in pairs(folder:GetDescendants()) do
+                -- Cek apakah ada tanda "Bom" di objek ini
+                -- Mengecek Value, Attribute, atau bahkan nama Objek
+                local isBomb = chip:FindFirstChild("IsBomb") or 
+                               chip:FindFirstChild("Bomb") or 
+                               chip:GetAttribute("IsBomb") or
+                               chip:GetAttribute("Bomb") or
+                               (chip.Name == "Bomb") -- Jika objeknya langsung bernama Bomb
+
+                if isBomb then
+                    local highlight = chip:FindFirstChild("FannHighlight")
+                    
+                    if BOMB_ESP_Enabled then
+                        if not highlight then
+                            highlight = Instance.new("Highlight")
+                            highlight.Name = "FannHighlight"
+                            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            highlight.FillTransparency = 0.4
+                            highlight.Parent = chip
+                        end
+                        highlight.Enabled = true
+                    else
+                        if highlight then highlight.Enabled = false end
                     end
                 end
             end
@@ -64,30 +69,16 @@ local function scanChips()
     end
 end
 
--- 3. Loop Update (Agar tetap terdeteksi jika ronde baru dimulai)
+-- 3. Loop Update
 RunService.Heartbeat:Connect(function()
     if BOMB_ESP_Enabled then
-        scanChips()
+        scanForBombs()
     end
 end)
 
--- 4. Logika Tombol
+-- 4. Tombol Toggle
 toggleBtn.MouseButton1Click:Connect(function()
     BOMB_ESP_Enabled = not BOMB_ESP_Enabled
-    
-    if BOMB_ESP_Enabled then
-        toggleBtn.Text = "BOMB SCAN: ON"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 85, 0) -- Orange/Merah
-    else
-        toggleBtn.Text = "BOMB SCAN: OFF"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        -- Bersihkan highlight saat dimatikan
-        local targetFolder = workspace:FindFirstChild("Chips") or workspace:FindFirstChild("Grid")
-        if targetFolder then
-            for _, chip in pairs(targetFolder:GetDescendants()) do
-                local h = chip:FindFirstChild("BombHighlight")
-                if h then h.Enabled = false end
-            end
-        end
-    end
+    toggleBtn.Text = BOMB_ESP_Enabled and "BOMB SCAN: ON" or "BOMB SCAN: OFF"
+    toggleBtn.BackgroundColor3 = BOMB_ESP_Enabled and Color3.fromRGB(255, 60, 60) or Color3.fromRGB(40, 40, 40)
 end)
