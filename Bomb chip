@@ -1,51 +1,35 @@
--- Nama Project: FANN
--- Status: Menu Toggle ON/OFF
+-- Project: FANN
+local status = "MATI"
 
-local featureOn = false -- Status awal fitur (Mati)
+function MenuUtama()
+    local pilih = gg.choice({
+        "1. AKTIFKAN (Status: "..status..")",
+        "2. KELUAR"
+    }, nil, "FANN BOMB DETECTOR")
 
-function Main()
-    local menu = gg.choice({
-        (featureOn and "🔴 MATIKAN Deteksi Bom" or "🟢 NYALAKAN Deteksi Bom"),
-        "❌ Keluar Script"
-    }, nil, "--- FANN SCRIPT MENU ---")
-
-    if menu == 1 then ToggleESP() end
-    if menu == 2 then os.exit() end
+    if pilih == 1 then LogikaBom() end
+    if pilih == 2 then os.exit() end
 end
 
-function ToggleESP()
-    featureOn = not featureOn -- Membalikkan status (On jadi Off, Off jadi On)
-    
-    if featureOn then
-        gg.toast("ESP Bom: AKTIF")
-        -- Memulai loop deteksi di background
-        gg.setVisible(false) 
-        while featureOn do
-            CariBom()
-            if gg.isVisible() then break end -- Kembali ke menu jika icon GG diklik
+function LogikaBom()
+    if status == "MATI" then
+        status = "AKTIF"
+        gg.toast("Mencari Bom...")
+        -- Ganti angka di bawah dengan ID asli bom game kamu
+        gg.searchNumber("9999", gg.TYPE_DWORD) 
+        if gg.getResultCount() == 0 then
+            gg.alert("Bom tidak ditemukan. Pastikan ID benar!")
         end
     else
-        gg.toast("ESP Bom: NONAKTIF")
+        status = "MATI"
+        gg.clearResults()
+        gg.toast("Fitur Dimatikan")
     end
 end
 
-function CariBom()
-    -- Ganti dengan value/ID bom yang sesuai dengan game kamu
-    gg.searchNumber("101;202;303", gg.TYPE_DWORD) 
-    
-    local res = gg.getResults(10)
-    if #res > 0 then
-        -- Logika penandaan lokasi bom di sini
-        gg.toast("⚠ BOM TERDETEKSI!")
-    end
-    gg.clearResults()
-    gg.sleep(1000) -- Jeda 1 detik agar tidak lag/crash
-end
-
--- Menjalankan menu terus menerus
 while true do
     if gg.isVisible() then
-        Main()
+        gg.setVisible(false)
+        MenuUtama()
     end
-    gg.sleep(100)
 end
