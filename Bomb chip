@@ -1,35 +1,47 @@
--- Project: FANN
-local status = "MATI"
+# Project Name: FANN
+# Deskripsi: Pendeteksi Objek via Gambar
 
-function MenuUtama()
-    local pilih = gg.choice({
-        "1. AKTIFKAN (Status: "..status..")",
-        "2. KELUAR"
-    }, nil, "FANN BOMB DETECTOR")
+import time
 
-    if pilih == 1 then LogikaBom() end
-    if pilih == 2 then os.exit() end
-end
+# Variabel Status
+fitur_aktif = False
 
-function LogikaBom()
-    if status == "MATI" then
-        status = "AKTIF"
-        gg.toast("Mencari Bom...")
-        -- Ganti angka di bawah dengan ID asli bom game kamu
-        gg.searchNumber("9999", gg.TYPE_DWORD) 
-        if gg.getResultCount() == 0 then
-            gg.alert("Bom tidak ditemukan. Pastikan ID benar!")
-        end
-    else
-        status = "MATI"
-        gg.clearResults()
-        gg.toast("Fitur Dimatikan")
-    end
-end
+def cari_bom():
+    # Di sini nantinya diisi logika OpenCV untuk scan layar
+    # Untuk sekarang, kita gunakan simulasi logika deteksi
+    print("[Mencari objek bom di layar...]")
+    time.sleep(1)
+    # Anggap saja bom ditemukan
+    objek_ketemu = True 
+    if objek_ketemu:
+        print(">> WARNING: BOM MUSUH TERDETEKSI! <<")
 
-while true do
-    if gg.isVisible() then
-        gg.setVisible(false)
-        MenuUtama()
-    end
-end
+def menu():
+    global fitur_aktif
+    while True:
+        print("\n=== FANN BOMB DETECTOR ===")
+        print(f"Status: {'[AKTIF]' if fitur_aktif else '[MATI]'}")
+        print("1. Nyalakan Deteksi")
+        print("2. Matikan Deteksi")
+        print("3. Keluar")
+        
+        pilihan = input("Pilih menu: ")
+
+        if pilihan == '1':
+            fitur_aktif = True
+            print("Deteksi dijalankan...")
+            # Menjalankan deteksi beberapa kali
+            for _ in range(5): 
+                if not fitur_aktif: break
+                cari_bom()
+        elif pilihan == '2':
+            fitur_aktif = False
+            print("Deteksi dimatikan.")
+        elif pilihan == '3':
+            print("Keluar dari program.")
+            break
+        else:
+            print("Pilihan tidak valid.")
+
+if __name__ == "__main__":
+    menu()
