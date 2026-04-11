@@ -1,34 +1,28 @@
--- Project Name: FANN (Toggle Version)
+-- Project Name: FANN (Killer Detector Only)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
--- Variabel status (Default: OFF)
 local isRunning = false
 
--- 1. MEMBUAT UI TOMBOL
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FANN_Menu"
-screenGui.Parent = CoreGui -- Agar tidak hilang saat mati
+-- 1. TOMBOL ON/OFF
+local screenGui = Instance.new("ScreenGui", CoreGui)
+screenGui.Name = "FANN_Detector"
 
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 100, 0, 50)
-toggleBtn.Position = UDim2.new(0, 10, 0.5, 0) -- Posisi di kiri tengah
-toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0) -- Merah (OFF)
-toggleBtn.Text = "FANN: OFF"
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.Parent = screenGui
+local btn = Instance.new("TextButton", screenGui)
+btn.Size = UDim2.new(0, 130, 0, 50)
+btn.Position = UDim2.new(0, 10, 0.5, 0)
+btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+btn.Text = "DETECTOR: OFF"
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 
--- 2. FUNGSI TOGGLE
-toggleBtn.MouseButton1Click:Connect(function()
+btn.MouseButton1Click:Connect(function()
     isRunning = not isRunning
-    if isRunning then
-        toggleBtn.Text = "FANN: ON"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0) -- Hijau (ON)
-    else
-        toggleBtn.Text = "FANN: OFF"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-        -- Bersihkan highlight saat OFF
+    btn.Text = isRunning and "DETECTOR: ON" or "DETECTOR: OFF"
+    btn.BackgroundColor3 = isRunning and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(50, 50, 50)
+    
+    -- Bersihkan efek saat dimatikan
+    if not isRunning then
         for _, p in pairs(Players:GetPlayers()) do
             if p.Character then
                 if p.Character:FindFirstChild("FANN_Tag") then p.Character.FANN_Tag:Destroy() end
@@ -38,53 +32,46 @@ toggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3. LOGIKA DETEKSI (Hanya jalan jika isRunning == true)
+-- 2. LOGIKA DETEKSI KHUSUS PEMEGANG PISAU
 RunService.RenderStepped:Connect(function()
     if not isRunning then return end
     
-    local localPlayer = Players.LocalPlayer
-    local localRoot = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-
+    local lp = Players.LocalPlayer
+    
     for _, p in pairs(Players:GetPlayers()) do
-        if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+        if p ~= lp and p.Character and p.Character:FindFirstChild("Head") then
             local char = p.Character
-            local root = char.HumanoidRootPart
+            -- Cek apakah ada Tool (Pisau) di tangan karakter
+            local holdsKnife = char:FindFirstChildOfClass("Tool")
             
-            local tag = char:FindFirstChild("FANN_Tag")
-            local hl = char:FindFirstChild("FANN_Highlight")
-            
-            -- Jika belum ada tag/highlight, buat baru
-            if not tag or not hl then
-                -- Buat Tag
-                local folder = Instance.new("BillboardGui", char)
-                folder.Name = "FANN_Tag"
-                folder.Size = UDim2.new(0, 150, 0, 50)
-                folder.Adornee = char.Head
-                folder.AlwaysOnTop = true
-                folder.ExtentsOffset = Vector3.new(0, 3, 0)
-                
-                local text = Instance.new("TextLabel", folder)
-                text.Size = UDim2.new(1, 0, 1, 0)
-                text.BackgroundTransparency = 1
-                text.TextStrokeTransparency = 0
-                
-                -- Buat Highlight
-                hl = Instance.new("Highlight", char)
-                hl.Name = "FANN_Highlight"
-            else
-                -- Update Jarak dan Warna
-                local dist = localRoot and math.floor((root.Position - localRoot.Position).Magnitude) or 0
-                local holdsTool = char:FindFirstChildOfClass("Tool")
-                
-                if holdsTool then
-                    tag.TextLabel.Text = "KILLER [" .. dist .. "m]"
-                    tag.TextLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-                    hl.FillColor = Color3.fromRGB(255, 0, 0)
-                else
-                    tag.TextLabel.Text = "SURVIVOR [" .. dist .. "m]"
-                    tag.TextLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-                    hl.FillColor = Color3.fromRGB(0, 170, 255)
+            if holdsKnife then
+                -- Jika pegang pisau, kasih tanda Merah
+                local tag = char:FindFirstChild("FANN_Tag") or Instance.new("BillboardGui", char)
+                if not char:FindFirstChild("FANN_Tag") then
+                    tag.Name = "FANN_Tag"
+                    tag.Size = UDim2.new(0, 100, 0, 40)
+                    tag.Adornee = char.Head
+                    tag.AlwaysOnTop = true
+                    tag.ExtentsOffset = Vector3.new(0, 3, 0)
+                    local txt = Instance.new("TextLabel", tag)
+                    txt.Size = UDim2.new(1, 0, 1, 0)
+                    txt.BackgroundTransparency = 1
+                    txt.TextColor3 = Color3.fromRGB(255, 0, 0)
+                    txt.TextStrokeTransparency = 0
+                    txt.Text = "⚠️ KILLER ⚠️"
                 end
+                
+                local hl = char:FindFirstChild("FANN_Highlight") or Instance.new("Highlight", char)
+                if not char:FindFirstChild("FANN_Highlight") then
+                    hl.Name = "FANN_Highlight"
+                    hl.FillColor = Color3.fromRGB(255, 0, 0)
+                    hl.FillOpacity = 0.5
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                end
+            else
+                -- Jika tidak pegang pisau, hapus efek (biar normal)
+                if char:FindFirstChild("FANN_Tag") then char.FANN_Tag:Destroy() end
+                if char:FindFirstChild("FANN_Highlight") then char.FANN_Highlight:Destroy() end
             end
         end
     end
