@@ -1,0 +1,579 @@
+-- ============================================
+-- SURVIVE THE KILLER ESP + AUTO KILL ALL
+-- TELEPORT + KILL EVERY PLAYER INSTANTLY
+-- ============================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- ============================================
+-- SETTINGS CONFIGURATION
+-- ============================================
+
+local Settings = {
+    ShowESP = true,
+    ShowBox = true,
+    ShowName = true,
+    ShowDistance = true,
+    ShowHealth = true,
+    ShowTracer = false,
+    BoxThickness = 2,
+    FontSize = 14,
+    MaxDistance = 250,
+    RefreshRate = 0.033,
+    AutoKillDelay = 0.1, -- Delay antar kill (detik)
+    KillAllHotkey = "X", -- Tombol buat kill all
+}
+
+-- ============================================
+-- COLOR SCHEME
+-- ============================================
+
+local Colors = {
+    Killer = Color3.fromRGB(255, 0, 0),
+    Survivor = Color3.fromRGB(0, 120, 255),
+    DistanceText = Color3.fromRGB(255, 255, 255),
+    HealthBar = Color3.fromRGB(0, 255, 0),
+    HealthBarLow = Color3.fromRGB(255, 0, 0),
+}
+
+-- ============================================
+-- KILLER DETECTION
+-- ============================================
+
+local KillerManager = {
+    AmIKiller = false,
+    CurrentKiller = nil,
+    MyWeapon = nil,
+}
+
+function KillerManager:CheckIfImKiller()
+    local character = LocalPlayer.Character
+    if not character then return false end
+    
+    -- CEK APAKAH PEMAIN INI KILLER
+    local weapon = character:FindFirstChildOfClass("Tool")
+    if weapon then
+        self.AmIKiller = true
+        self.MyWeapon = weapon
+        return true
+    end
+    
+    local killerTag = character:FindFirstChild("KillerTag") or 
+                      character:FindFirstChild("Murderer") or
+                      character:FindFirstChild("Killer")
+    if killerTag then
+        self.AmIKiller = true
+        return true
+    end
+    
+    self.AmIKiller = false
+    return false
+end
+
+-- ============================================
+-- KILL ALL MODULE - TELEPORT + INSTANT KILL
+-- ============================================
+
+local KillAllModule = {
+    IsKilling = false,
+    KillQueue = {},
+    KillCount = 0,
+    TargetList = {},
+}
+
+function KillAllModule:GetAllTargets()
+    local targets = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local character = player.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                    table.insert(targets, {
+                        player = player,
+                        character = character,
+                        rootPart = character.HumanoidRootPart,
+                        humanoid = humanoid,
+                    })
+                end
+            end
+        end
+    end
+    return targets
+end
+
+function KillAllModule:TeleportToTarget(targetPos)
+    local character = LocalPlayer.Character
+    if not character then return false end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return false end
+    
+    -- TELEPORT INSTAN
+    rootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
+    task.wait(0.05)
+    return true
+end
+
+function KillAllModule:ExecuteKill(target)
+    -- METHOD 1: PAKE TOOL (SENJATA)
+    local character = LocalPlayer.Character
+    if not character then return false end
+    
+    local weapon = KillerManager.MyWeapon
+    if weapon then
+        -- EQUIP SENJATA
+        local tool = character:FindFirstChildWhichIsA("Tool")
+        if tool then
+            tool.Parent = character
+            task.wait(0.02)
+        end
+        
+        -- CLICK / ATTACK
+        VirtualInputManager:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, 0, 0, true, game, 0)
+        task.wait(0.02)
+        VirtualInputManager:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, 0, 0, false, game, 0)
+        task.wait(0.05)
+        
+        -- LANGSUNG HAPUS HP
+        if target.humanoid then
+            target.humanoid.Health = 0
+        end
+        return true
+    end
+    
+    -- METHOD 2: LANGSUNG SET HEALTH KE 0
+    if target.humanoid then
+        target.humanoid.Health = 0
+        return true
+    end
+    
+    return false
+end
+
+function KillAllModule:StartKillAll()
+    if self.IsKilling then
+        print("⚠️ [KILLALL] Already in progress!")
+        return
+    end
+    
+    if not KillerManager:CheckIfImKiller() then
+        print("❌ [KILLALL] You are not the KILLER! Can't use kill all!")
+        return
+    end
+    
+    self.IsKilling = true
+    self.KillCount = 0
+    self.TargetList = self:GetAllTargets()
+    
+    if #self.TargetList == 0 then
+        print("⚠️ [KILLALL] No targets found!")
+        self.IsKilling = false
+        return
+    end
+    
+    print("========================================")
+    print("🔪 [KILLALL] INITIATED! 🔪")
+    print("📊 Total targets: " .. #self.TargetList)
+    print("========================================")
+    
+    local startTime = tick()
+    
+    for i, target in ipairs(self.TargetList) do
+        if not target.rootPart then
+            print("⚠️ Skipping " .. target.player.Name .. " - no root part")
+            goto continue
+        end
+        
+        -- TELEPORT KE TARGET
+        local targetPos = target.rootPart.Position
+        self:TeleportToTarget(targetPos)
+        
+        -- EKSEKUSI KILL
+        local success = self:ExecuteKill(target)
+        
+        if success then
+            self.KillCount = self.KillCount + 1
+            print("✅ [" .. self.KillCount .. "/" .. #self.TargetList .. "] Killed: " .. target.player.Name)
+        else
+            print("❌ Failed to kill: " .. target.player.Name)
+        end
+        
+        -- DELAY ANTAR KILL
+        task.wait(Settings.AutoKillDelay)
+        
+        ::continue::
+    end
+    
+    local elapsed = tick() - startTime
+    print("========================================")
+    print("🔪 [KILLALL] COMPLETED! 🔪")
+    print("✅ Killed: " .. self.KillCount .. " players")
+    print("⏱️ Time: " .. string.format("%.2f", elapsed) .. " seconds")
+    print("========================================")
+    
+    self.IsKilling = false
+end
+
+-- ============================================
+-- UI BUTTON (TOMBOL KILL ALL)
+-- ============================================
+
+local UIManager = {
+    MainGui = nil,
+    KillButton = nil,
+    StatusLabel = nil,
+}
+
+function UIManager:CreateUI()
+    -- HAPUS GUI LAMA
+    if self.MainGui then self.MainGui:Destroy() end
+    
+    self.MainGui = Instance.new("ScreenGui")
+    self.MainGui.Name = "KillerESP"
+    self.MainGui.Parent = game:GetService("CoreGui")
+    
+    -- MAIN FRAME
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 200, 0, 80)
+    mainFrame.Position = UDim2.new(1, -220, 0, 10)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    mainFrame.BackgroundTransparency = 0.2
+    mainFrame.BorderSizePixel = 1
+    mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    mainFrame.Parent = self.MainGui
+    
+    -- CORNER
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = mainFrame
+    
+    -- KILL ALL BUTTON (MERAH GEDE)
+    self.KillButton = Instance.new("TextButton")
+    self.KillButton.Size = UDim2.new(0, 180, 0, 40)
+    self.KillButton.Position = UDim2.new(0.5, -90, 0, 10)
+    self.KillButton.Text = "🔪 KILL ALL 🔪"
+    self.KillButton.TextSize = 16
+    self.KillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.KillButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    self.KillButton.BorderSizePixel = 0
+    self.KillButton.Parent = mainFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.Parent = self.KillButton
+    
+    -- STATUS LABEL
+    self.StatusLabel = Instance.new("TextLabel")
+    self.StatusLabel.Size = UDim2.new(0, 180, 0, 20)
+    self.StatusLabel.Position = UDim2.new(0.5, -90, 0, 55)
+    self.StatusLabel.Text = "⚔️ KILLER MODE ACTIVE ⚔️"
+    self.StatusLabel.TextSize = 11
+    self.StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    self.StatusLabel.BackgroundTransparency = 1
+    self.StatusLabel.Parent = mainFrame
+    
+    -- BUTTON CLICK
+    self.KillButton.MouseButton1Click:Connect(function()
+        KillAllModule:StartKillAll()
+    end)
+    
+    -- KILLER STATUS CHECK
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            if KillerManager:CheckIfImKiller() then
+                self.KillButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+                self.KillButton.Text = "🔪 KILL ALL 🔪"
+                self.KillButton.Visible = true
+                self.StatusLabel.Text = "⚔️ YOU ARE THE KILLER! ⚔️"
+                self.StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                mainFrame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+            else
+                self.KillButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+                self.KillButton.Text = "🔒 NOT KILLER 🔒"
+                self.KillButton.Visible = true
+                self.StatusLabel.Text = "❌ NOT THE KILLER ❌"
+                self.StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            end
+        end
+    end)
+end
+
+-- ============================================
+-- HOTKEY DETECTION (TOMOL X UNTUK KILL ALL)
+-- ============================================
+
+function SetupHotkey()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        -- TOMOL X UNTUK KILL ALL
+        if input.KeyCode == Enum.KeyCode.X then
+            if KillerManager:CheckIfImKiller() then
+                KillAllModule:StartKillAll()
+            else
+                print("❌ You are not the killer! Can't use kill all!")
+            end
+        end
+        
+        -- TOMOL J UNTUK TOGGLE ESP
+        if input.KeyCode == Enum.KeyCode.J then
+            Settings.ShowESP = not Settings.ShowESP
+            print("[ESP] Toggled: " .. tostring(Settings.ShowESP))
+        end
+    end)
+end
+
+-- ============================================
+-- ESP DRAWING MODULE (SAMA KAYA SEBELUMNYA)
+-- ============================================
+
+local ESPModule = {}
+ESPModule.__index = ESPModule
+
+function ESPModule:New(player)
+    local self = setmetatable({}, ESPModule)
+    self.Player = player
+    self.Enabled = true
+    self.Distance = math.huge
+    self.IsKiller = false
+    self.HealthPercent = 100
+    
+    self.Box = Drawing.new("Square")
+    self.Box.Visible = false
+    self.Box.Thickness = Settings.BoxThickness
+    self.Box.Filled = false
+    
+    self.NameTag = Drawing.new("Text")
+    self.NameTag.Visible = false
+    self.NameTag.Size = Settings.FontSize
+    self.NameTag.Center = true
+    self.NameTag.Outline = true
+    self.NameTag.OutlineColor = Color3.new(0, 0, 0)
+    
+    self.DistanceTag = Drawing.new("Text")
+    self.DistanceTag.Visible = false
+    self.DistanceTag.Size = Settings.FontSize - 2
+    self.DistanceTag.Center = true
+    self.DistanceTag.Outline = true
+    
+    self.HealthBar = Drawing.new("Line")
+    self.HealthBar.Visible = false
+    self.HealthBar.Thickness = 3
+    
+    return self
+end
+
+function ESPModule:Update()
+    if not Settings.ShowESP or not self.Enabled then
+        self:SetVisible(false)
+        return
+    end
+    
+    local character = self.Player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        self:SetVisible(false)
+        return
+    end
+    
+    local rootPart = character.HumanoidRootPart
+    local rootPos = rootPart.Position
+    local cameraPos = Camera.CFrame.Position
+    
+    self.Distance = (cameraPos - rootPos).Magnitude
+    
+    if self.Distance > Settings.MaxDistance then
+        self:SetVisible(false)
+        return
+    end
+    
+    local screenPos, onScreen = Camera:WorldToViewportPoint(rootPos)
+    
+    if not onScreen or screenPos.Z < 0 then
+        self:SetVisible(false)
+        return
+    end
+    
+    local sizeScale = 3.5 / (screenPos.Z / 10)
+    local boxSize = Vector2.new(80 * sizeScale, 100 * sizeScale)
+    local boxPos = Vector2.new(screenPos.X - boxSize.X/2, screenPos.Y - boxSize.Y)
+    
+    self.Box.Position = boxPos
+    self.Box.Size = boxSize
+    
+    self.NameTag.Position = Vector2.new(screenPos.X, boxPos.Y - 18)
+    self.NameTag.Text = self.Player.Name
+    
+    self.DistanceTag.Position = Vector2.new(screenPos.X, boxPos.Y + boxSize.Y + 5)
+    self.DistanceTag.Text = string.format("%.0fm", self.Distance)
+    
+    local healthY = boxPos.Y + boxSize.Y + 2
+    local healthWidth = boxSize.X * (self.HealthPercent / 100)
+    self.HealthBar.From = Vector2.new(boxPos.X, healthY)
+    self.HealthBar.To = Vector2.new(boxPos.X + healthWidth, healthY)
+    
+    if self.IsKiller then
+        self.Box.Color = Colors.Killer
+        self.NameTag.Color = Colors.Killer
+    else
+        self.Box.Color = Colors.Survivor
+        self.NameTag.Color = Colors.Survivor
+    end
+    self.DistanceTag.Color = Colors.DistanceText
+    
+    if self.HealthPercent > 50 then
+        self.HealthBar.Color = Colors.HealthBar
+    else
+        self.HealthBar.Color = Colors.HealthBarLow
+    end
+    
+    self:SetVisible(true)
+end
+
+function ESPModule:SetVisible(visible)
+    self.Box.Visible = visible and Settings.ShowBox
+    self.NameTag.Visible = visible and Settings.ShowName
+    self.DistanceTag.Visible = visible and Settings.ShowDistance
+    self.HealthBar.Visible = visible and Settings.ShowHealth
+end
+
+function ESPModule:Destroy()
+    self.Box:Remove()
+    self.NameTag:Remove()
+    self.DistanceTag:Remove()
+    self.HealthBar:Remove()
+end
+
+-- ============================================
+-- ESP MANAGER
+-- ============================================
+
+local ESPManager = {
+    ActiveESPs = {},
+    CurrentKiller = nil,
+}
+
+function ESPManager:Initialize()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            self:AddPlayer(player)
+        end
+    end
+    
+    Players.PlayerAdded:Connect(function(player)
+        if player ~= LocalPlayer then
+            self:AddPlayer(player)
+        end
+    end)
+    
+    Players.PlayerRemoved:Connect(function(player)
+        self:RemovePlayer(player)
+    end)
+    
+    RunService.RenderStepped:Connect(function()
+        -- UPDATE KILLER DETECTION
+        KillerManager:CheckIfImKiller()
+        
+        -- UPDATE ESP
+        for _, esp in pairs(self.ActiveESPs) do
+            esp.IsKiller = (esp.Player == KillerManager.CurrentKiller)
+            esp:Update()
+        end
+    end)
+    
+    -- UPDATE HEALTH
+    task.spawn(function()
+        while true do
+            task.wait(0.5)
+            for _, esp in pairs(self.ActiveESPs) do
+                local char = esp.Player.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        esp.HealthPercent = (hum.Health / hum.MaxHealth) * 100
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function ESPManager:AddPlayer(player)
+    local esp = ESPModule:New(player)
+    self.ActiveESPs[player] = esp
+end
+
+function ESPManager:RemovePlayer(player)
+    local esp = self.ActiveESPs[player]
+    if esp then
+        esp:Destroy()
+        self.ActiveESPs[player] = nil
+    end
+end
+
+-- ============================================
+-- INITIALIZATION
+-- ============================================
+
+print("")
+print("╔══════════════════════════════════════════════════════╗")
+print("║     SURVIVE THE KILLER - KILL ALL EDITION v5.0       ║")
+print("║                 by Wleo x Raps                       ║")
+print("╠══════════════════════════════════════════════════════╣")
+print("║  🔴 KILLER = RED BOX                                 ║")
+print("║  🔵 SURVIVOR = BLUE BOX                              ║")
+print("║  📏 DISTANCE shown below name                        ║")
+print("║  💚 HEALTH BAR above distance                        ║")
+print("║                                                      ║")
+print("║  🔪 KILL ALL FEATURES:                               ║")
+print("║  • Auto detect if you're the KILLER                  ║")
+print("║  • Kill All button (RED) at top right                ║")
+print("║  • Press X to Kill All (hotkey)                      ║")
+print("║  • Auto teleport to each player                      ║")
+print("║  • Instant kill execution                            ║")
+print("║                                                      ║")
+print("║  ⌨️  Controls:                                       ║")
+print("║  • J = Toggle ESP                                    ║")
+print("║  • X = Kill All (only when you're killer)           ║")
+print("║  • Click RED button = Kill All                       ║")
+print("╚══════════════════════════════════════════════════════╝")
+print("")
+
+-- START ALL MODULES
+ESPManager:Initialize()
+UIManager:CreateUI()
+SetupHotkey()
+
+-- KILLER CHECK SETIAP DETIK
+task.spawn(function()
+    while true do
+        task.wait(1)
+        KillerManager:CheckIfImKiller()
+        if KillerManager.AmIKiller then
+            -- CARI TAU SIAPA KILLER LAIN (KALO ADA)
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    local char = player.Character
+                    if char and char:FindFirstChildOfClass("Tool") then
+                        KillerManager.CurrentKiller = player
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
+
+print("✅ All systems ready!")
+print("✅ Kill All button available at top right!")
+print("✅ Press X to instantly kill all players!")
