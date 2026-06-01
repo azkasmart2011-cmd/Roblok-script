@@ -1,0 +1,675 @@
+-- ============================================
+-- SURVIVE THE KILLER - ESP + AUTO KILL ALL
+-- FULLY FUNCTIONAL v5.0
+-- BY: Wleo x Raps
+-- GITHUB: https://github.com/yourusername/STK-KillAll
+-- ============================================
+-- FITUR:
+-- 🔴 KILLER = RED BOX + RED NAME
+-- 🔵 SURVIVOR = BLUE BOX + BLUE NAME
+-- 📏 DISTANCE METER (meters)
+-- 💚 HEALTH BAR (green/red)
+-- 🗺️ RADAR MINIMAP (top-left)
+-- 🔪 KILL ALL (auto teleport + instant kill)
+-- ⌨️ HOTKEY: X = Kill All, J = Toggle ESP
+-- ============================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- ============================================
+-- SETTINGS (USER CONFIGURABLE)
+-- ============================================
+
+local Settings = {
+    ShowESP = true,
+    ShowBox = true,
+    ShowName = true,
+    ShowDistance = true,
+    ShowHealth = true,
+    ShowTracer = false,
+    ShowRadar = true,
+    BoxThickness = 2,
+    FontSize = 14,
+    MaxDistance = 250,
+    AutoKillDelay = 0.08,
+    KillAllHotkey = "X",
+    ToggleHotkey = "J",
+}
+
+-- ============================================
+-- COLORS
+-- ============================================
+
+local Colors = {
+    Killer = Color3.fromRGB(255, 0, 0),
+    Survivor = Color3.fromRGB(0, 150, 255),
+    Distance = Color3.fromRGB(255, 255, 255),
+    HealthGood = Color3.fromRGB(0, 255, 0),
+    HealthBad = Color3.fromRGB(255, 0, 0),
+    RadarBg = Color3.fromRGB(20, 20, 30),
+    RadarBorder = Color3.fromRGB(0, 255, 0),
+    RadarDot = Color3.fromRGB(255, 255, 255),
+    Tracer = Color3.fromRGB(255, 255, 255),
+}
+
+-- ============================================
+-- KILLER DETECTION
+-- ============================================
+
+local KillerManager = {
+    AmIKiller = false,
+    MyWeapon = nil,
+}
+
+function KillerManager:CheckIfImKiller()
+    local character = LocalPlayer.Character
+    if not character then 
+        self.AmIKiller = false
+        return false 
+    end
+    
+    -- CEK SENJATA
+    local weapon = character:FindFirstChildOfClass("Tool")
+    if weapon and weapon:IsA("Tool") then
+        self.AmIKiller = true
+        self.MyWeapon = weapon
+        return true
+    end
+    
+    -- CEK TAG KILLER
+    local tags = {"KillerTag", "Murderer", "Killer", "IsKiller"}
+    for _, tag in ipairs(tags) do
+        if character:FindFirstChild(tag) then
+            self.AmIKiller = true
+            return true
+        end
+    end
+    
+    -- CEK HUMAN PROPERTIES
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid:GetAttribute("IsKiller") then
+        self.AmIKiller = true
+        return true
+    end
+    
+    self.AmIKiller = false
+    return false
+end
+
+-- ============================================
+-- KILL ALL MODULE
+-- ============================================
+
+local KillAllModule = {
+    IsRunning = false,
+    KillCount = 0,
+}
+
+function KillAllModule:GetTargets()
+    local targets = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    table.insert(targets, {
+                        player = player,
+                        character = char,
+                        root = char.HumanoidRootPart,
+                        humanoid = hum,
+                    })
+                end
+            end
+        end
+    end
+    return targets
+end
+
+function KillAllModule:Teleport(pos)
+    local char = LocalPlayer.Character
+    if not char then return false end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then return false end
+    
+    root.CFrame = CFrame.new(pos + Vector3.new(0, 2, 0))
+    task.wait(0.03)
+    return true
+end
+
+function KillAllModule:Kill(target)
+    -- METHOD 1: SET HEALTH TO 0
+    if target.humanoid then
+        target.humanoid.Health = 0
+        task.wait(0.01)
+        return true
+    end
+    
+    -- METHOD 2: PAKE SENJATA (KALO ADA)
+    local char = LocalPlayer.Character
+    if char and KillerManager.MyWeapon then
+        local tool = char:FindFirstChildWhichIsA("Tool")
+        if tool then
+            -- SIMULASI SERANGAN
+            VirtualInputManager:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, 0, 0, true, game, 0)
+            task.wait(0.02)
+            VirtualInputManager:SendMouseButtonEvent(Enum.UserInputType.MouseButton1, 0, 0, false, game, 0)
+            task.wait(0.03)
+            
+            if target.humanoid then
+                target.humanoid.Health = 0
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+function KillAllModule:Execute()
+    if self.IsRunning then
+        print("⚠️ Kill All already running!")
+        return
+    end
+    
+    if not KillerManager:CheckIfImKiller() then
+        print("❌ You are NOT the killer! Cannot use Kill All.")
+        return
+    end
+    
+    local targets = self:GetTargets()
+    if #targets == 0 then
+        print("⚠️ No targets found!")
+        return
+    end
+    
+    self.IsRunning = true
+    self.KillCount = 0
+    
+    print("")
+    print("═══════════════════════════════════════")
+    print("🔪 KILL ALL - INITIATED 🔪")
+    print("📊 Targets: " .. #targets)
+    print("═══════════════════════════════════════")
+    
+    local startTime = tick()
+    
+    for i, target in ipairs(targets) do
+        if target.root then
+            self:Teleport(target.root.Position)
+            if self:Kill(target) then
+                self.KillCount = self.KillCount + 1
+                print("✅ [" .. self.KillCount .. "/" .. #targets .. "] Killed: " .. target.player.Name)
+            else
+                print("❌ Failed: " .. target.player.Name)
+            end
+        end
+        task.wait(Settings.AutoKillDelay)
+    end
+    
+    local elapsed = tick() - startTime
+    
+    print("═══════════════════════════════════════")
+    print("🔪 KILL ALL - COMPLETED 🔪")
+    print("✅ Killed: " .. self.KillCount .. " players")
+    print("⏱️ Time: " .. string.format("%.2f", elapsed) .. "s")
+    print("═══════════════════════════════════════")
+    print("")
+    
+    self.IsRunning = false
+end
+
+-- ============================================
+-- ESP MODULE
+-- ============================================
+
+local ESPObjects = {}
+local CurrentKiller = nil
+
+local function CreateESP(player)
+    local esp = {
+        Player = player,
+        Box = Drawing.new("Square"),
+        Name = Drawing.new("Text"),
+        Distance = Drawing.new("Text"),
+        Health = Drawing.new("Line"),
+        Enabled = true,
+        HealthPercent = 100,
+    }
+    
+    esp.Box.Visible = false
+    esp.Box.Thickness = Settings.BoxThickness
+    esp.Box.Filled = false
+    
+    esp.Name.Visible = false
+    esp.Name.Size = Settings.FontSize
+    esp.Name.Center = true
+    esp.Name.Outline = true
+    esp.Name.OutlineColor = Color3.new(0, 0, 0)
+    
+    esp.Distance.Visible = false
+    esp.Distance.Size = Settings.FontSize - 2
+    esp.Distance.Center = true
+    esp.Distance.Outline = true
+    
+    esp.Health.Visible = false
+    esp.Health.Thickness = 3
+    
+    return esp
+end
+
+local function UpdateESP(esp)
+    if not Settings.ShowESP or not esp.Enabled then
+        esp.Box.Visible = false
+        esp.Name.Visible = false
+        esp.Distance.Visible = false
+        esp.Health.Visible = false
+        return
+    end
+    
+    local char = esp.Player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then
+        esp.Box.Visible = false
+        esp.Name.Visible = false
+        esp.Distance.Visible = false
+        esp.Health.Visible = false
+        return
+    end
+    
+    local root = char.HumanoidRootPart
+    local rootPos = root.Position
+    local camPos = Camera.CFrame.Position
+    local dist = (camPos - rootPos).Magnitude
+    
+    if dist > Settings.MaxDistance then
+        esp.Box.Visible = false
+        esp.Name.Visible = false
+        esp.Distance.Visible = false
+        esp.Health.Visible = false
+        return
+    end
+    
+    local screenPos, onScreen = Camera:WorldToViewportPoint(rootPos)
+    if not onScreen or screenPos.Z < 0 then
+        esp.Box.Visible = false
+        esp.Name.Visible = false
+        esp.Distance.Visible = false
+        esp.Health.Visible = false
+        return
+    end
+    
+    local scale = 3.5 / (screenPos.Z / 10)
+    local boxW = 80 * scale
+    local boxH = 100 * scale
+    local boxX = screenPos.X - boxW / 2
+    local boxY = screenPos.Y - boxH
+    
+    esp.Box.Position = Vector2.new(boxX, boxY)
+    esp.Box.Size = Vector2.new(boxW, boxH)
+    
+    esp.Name.Position = Vector2.new(screenPos.X, boxY - 18)
+    esp.Name.Text = esp.Player.Name
+    
+    esp.Distance.Position = Vector2.new(screenPos.X, boxY + boxH + 5)
+    esp.Distance.Text = string.format("%.0fm", dist)
+    
+    local healthY = boxY + boxH + 2
+    local healthW = boxW * (esp.HealthPercent / 100)
+    esp.Health.From = Vector2.new(boxX, healthY)
+    esp.Health.To = Vector2.new(boxX + healthW, healthY)
+    
+    -- WARNA BERDASARKAN KILLER ATAU BUKAN
+    local isKiller = (esp.Player == CurrentKiller)
+    if isKiller then
+        esp.Box.Color = Colors.Killer
+        esp.Name.Color = Colors.Killer
+    else
+        esp.Box.Color = Colors.Survivor
+        esp.Name.Color = Colors.Survivor
+    end
+    esp.Distance.Color = Colors.Distance
+    
+    if esp.HealthPercent > 50 then
+        esp.Health.Color = Colors.HealthGood
+    else
+        esp.Health.Color = Colors.HealthBad
+    end
+    
+    esp.Box.Visible = Settings.ShowBox
+    esp.Name.Visible = Settings.ShowName
+    esp.Distance.Visible = Settings.ShowDistance
+    esp.Health.Visible = Settings.ShowHealth
+end
+
+local function DestroyAllESP()
+    for _, esp in pairs(ESPObjects) do
+        esp.Box:Remove()
+        esp.Name:Remove()
+        esp.Distance:Remove()
+        esp.Health:Remove()
+    end
+    ESPObjects = {}
+end
+
+-- ============================================
+-- RADAR MODULE
+-- ============================================
+
+local RadarObjects = {}
+local RadarEnabled = true
+local RadarSize = 130
+local RadarPos = {X = 15, Y = 15}
+
+local function CreateRadar()
+    -- HAPUS RADAR LAMA
+    for _, obj in pairs(RadarObjects) do
+        if obj and obj.Remove then obj:Remove() end
+    end
+    RadarObjects = {}
+    
+    if not Settings.ShowRadar or not RadarEnabled then return end
+    
+    local bg = Drawing.new("Square")
+    bg.Position = Vector2.new(RadarPos.X, RadarPos.Y)
+    bg.Size = Vector2.new(RadarSize, RadarSize)
+    bg.Thickness = 1
+    bg.Color = Colors.RadarBg
+    bg.Filled = true
+    bg.Transparency = 0.6
+    bg.Visible = true
+    table.insert(RadarObjects, bg)
+    
+    local border = Drawing.new("Square")
+    border.Position = Vector2.new(RadarPos.X - 1, RadarPos.Y - 1)
+    border.Size = Vector2.new(RadarSize + 2, RadarSize + 2)
+    border.Thickness = 2
+    border.Color = Colors.RadarBorder
+    border.Filled = false
+    border.Visible = true
+    table.insert(RadarObjects, border)
+    
+    local center = Drawing.new("Circle")
+    center.Position = Vector2.new(RadarPos.X + RadarSize/2, RadarPos.Y + RadarSize/2)
+    center.Radius = 3
+    center.Color = Colors.RadarDot
+    center.Filled = true
+    center.Visible = true
+    table.insert(RadarObjects, center)
+end
+
+local function UpdateRadar()
+    if not Settings.ShowRadar or not RadarEnabled then
+        for _, obj in pairs(RadarObjects) do
+            if obj and obj.Visible then obj.Visible = false end
+        end
+        return
+    end
+    
+    -- UPDATE VISIBILITY
+    for _, obj in pairs(RadarObjects) do
+        if obj then obj.Visible = true end
+    end
+    
+    -- HAPUS DOT LAMA (KECUALI BACKGROUND, BORDER, CENTER)
+    for i = 4, #RadarObjects do
+        if RadarObjects[i] and RadarObjects[i].Remove then
+            RadarObjects[i]:Remove()
+        end
+    end
+    for i = 4, #RadarObjects do RadarObjects[i] = nil end
+    
+    -- TAMBAHIN DOT UNTUK SETIAP PLAYER
+    local camPos = Camera.CFrame.Position
+    local centerX = RadarPos.X + RadarSize/2
+    local centerY = RadarPos.Y + RadarSize/2
+    local scale = RadarSize / 100 -- 100 unit = full radar
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local rootPos = char.HumanoidRootPart.Position
+                local delta = rootPos - camPos
+                local dist = delta.Magnitude
+                
+                if dist < 100 then
+                    local dotX = centerX + (delta.X * scale)
+                    local dotZ = centerY + (delta.Z * scale)
+                    
+                    if dotX > RadarPos.X and dotX < RadarPos.X + RadarSize and
+                       dotZ > RadarPos.Y and dotZ < RadarPos.Y + RadarSize then
+                        
+                        local dot = Drawing.new("Circle")
+                        dot.Position = Vector2.new(dotX, dotZ)
+                        dot.Radius = 2
+                        dot.Color = (player == CurrentKiller) and Colors.Killer or Colors.Survivor
+                        dot.Filled = true
+                        dot.Visible = true
+                        table.insert(RadarObjects, dot)
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- ============================================
+-- UI BUTTON (KILL ALL)
+-- ============================================
+
+local ScreenGui = nil
+local KillButton = nil
+local StatusLabel = nil
+
+local function CreateUI()
+    -- HAPUS GUI LAMA
+    if ScreenGui then ScreenGui:Destroy() end
+    
+    ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "STK_KillAll"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 180, 0, 75)
+    frame.Position = UDim2.new(1, -195, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+    frame.BackgroundTransparency = 0.25
+    frame.BorderSizePixel = 1
+    frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    frame.Parent = ScreenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    KillButton = Instance.new("TextButton")
+    KillButton.Size = UDim2.new(0, 160, 0, 35)
+    KillButton.Position = UDim2.new(0.5, -80, 0, 8)
+    KillButton.Text = "🔪 KILL ALL"
+    KillButton.TextSize = 14
+    KillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    KillButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    KillButton.BorderSizePixel = 0
+    KillButton.Parent = frame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.Parent = KillButton
+    
+    StatusLabel = Instance.new("TextLabel")
+    StatusLabel.Size = UDim2.new(0, 160, 0, 18)
+    StatusLabel.Position = UDim2.new(0.5, -80, 0, 48)
+    StatusLabel.Text = "⚔️ CHECKING..."
+    StatusLabel.TextSize = 10
+    StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    StatusLabel.BackgroundTransparency = 1
+    StatusLabel.Parent = frame
+    
+    KillButton.MouseButton1Click:Connect(function()
+        KillAllModule:Execute()
+    end)
+    
+    -- UPDATE STATUS LOOP
+    task.spawn(function()
+        while true do
+            task.wait(0.5)
+            if KillerManager:CheckIfImKiller() then
+                KillButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+                KillButton.Text = "🔪 KILL ALL"
+                KillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                StatusLabel.Text = "⚔️ YOU ARE THE KILLER!"
+                StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+            else
+                KillButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                KillButton.Text = "🔒 NOT KILLER"
+                KillButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+                StatusLabel.Text = "❌ NOT THE KILLER"
+                StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            end
+        end
+    end)
+end
+
+-- ============================================
+-- HOTKEY SETUP
+-- ============================================
+
+local function SetupHotkeys()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        -- KILL ALL (X)
+        if input.KeyCode == Enum.KeyCode.X then
+            if KillerManager:CheckIfImKiller() then
+                KillAllModule:Execute()
+            else
+                print("❌ You are not the killer!")
+            end
+        end
+        
+        -- TOGGLE ESP (J)
+        if input.KeyCode == Enum.KeyCode.J then
+            Settings.ShowESP = not Settings.ShowESP
+            print("[ESP] " .. (Settings.ShowESP and "ON" or "OFF"))
+        end
+        
+        -- TOGGLE RADAR (R)
+        if input.KeyCode == Enum.KeyCode.R then
+            RadarEnabled = not RadarEnabled
+            if RadarEnabled then CreateRadar() end
+            print("[RADAR] " .. (RadarEnabled and "ON" or "OFF"))
+        end
+    end)
+end
+
+-- ============================================
+-- HEALTH MONITOR
+-- ============================================
+
+local function StartHealthMonitor()
+    task.spawn(function()
+        while true do
+            task.wait(0.3)
+            for _, esp in pairs(ESPObjects) do
+                local char = esp.Player.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        esp.HealthPercent = (hum.Health / hum.MaxHealth) * 100
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ============================================
+-- KILLER SCAN LOOP
+-- ============================================
+
+local function StartKillerScanner()
+    task.spawn(function()
+        while true do
+            task.wait(0.3)
+            -- CEK SIAPA KILLER (SELAIN DIRI SENDIRI)
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    local char = player.Character
+                    if char then
+                        -- CEK SENJATA
+                        if char:FindFirstChildOfClass("Tool") then
+                            CurrentKiller = player
+                            break
+                        end
+                        -- CEK TAG
+                        if char:FindFirstChild("KillerTag") or char:FindFirstChild("Murderer") then
+                            CurrentKiller = player
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ============================================
+-- MAIN INITIALIZATION
+-- ============================================
+
+local function Initialize()
+    -- BUAT ESP UNTUK PLAYER YANG SUDAH ADA
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            ESPObjects[player] = CreateESP(player)
+        end
+    end
+    
+    -- PLAYER ADDED
+    Players.PlayerAdded:Connect(function(player)
+        if player ~= LocalPlayer then
+            ESPObjects[player] = CreateESP(player)
+        end
+    end)
+    
+    -- PLAYER REMOVED
+    Players.PlayerRemoved:Connect(function(player)
+        local esp = ESPObjects[player]
+        if esp then
+            esp.Box:Remove()
+            esp.Name:Remove()
+            esp.Distance:Remove()
+            esp.Health:Remove()
+           ESPObjects[player] = nil
+        end
+    end)
+    
+    -- RENDER LOOP
+    RunService.RenderStepped:Connect(function()
+        KillerManager:CheckIfImKiller()
+        for _, esp in pairs(ESPObjects) do
+            UpdateESP(esp)
+        end
+        UpdateRadar()
+    end)
+    
+    -- START MODULES
+    CreateUI()
+    CreateRadar()
+    SetupHotkeys()
+    StartHealthMonitor()
+    StartKillerScanner()
+    
+    print("✅ Script loaded successfully!")
+end
+
+-- RUN
+pcall(Initialize)
